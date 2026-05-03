@@ -8,11 +8,233 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     
     <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, onSnapshot, query, where, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-    <!-- Monetag SDK Integration -->
+        const firebaseConfig = {
+            apiKey: "AIzaSyDJwBkkuTwCpnEB6-JD4axqms5OniGr9-s",
+            authDomain: "ern-93752.firebaseapp.com",
+            databaseURL: "https://ern-93752-default-rtdb.firebaseio.com",
+            projectId: "ern-93752",
+            storageBucket: "ern-93752.firebasestorage.app",
+            messagingSenderId: "159583001756",
+            appId: "1:159583001756:web:c7c8380f88da94ba97e159"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+
+        // Global state
+        let userData = null;
+        let taskSettings = {
+            task1: true,
+            task2: true,
+            task3: true
+        };
+        const REWARD_AMOUNT = 0.07;
+        let selectedPaymentMethod = "";
+
+        // Elements
+        const loginScreen = document.getElementById('login-screen');
+        const appScreen = document.getElementById('app-screen');
+        const historyScreen = document.getElementById('history-screen');
+        const withdrawModal = document.getElementById('withdraw-modal');
+        const mainModal = document.getElementById('modal');
+
+        // Authentication logic
+        window.signInWithGoogle = () => {
+            signInWithPopup(auth, provider).catch(err => console.error(err));
+        };
+
+        window.logout = () => signOut(auth);
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                loginScreen.classList.add('hidden');
+                appScreen.classList.remove('hidden');
+                document.getElementById('user-photo').src = user.photoURL || '';
+                document.getElementById('user-name').innerText = user.displayName;
+                document.getElementById('user-id-display').innerText = "ID: " + user.uid.substring(0, 10).toUpperCase();
+
+                // User data listener
+                const userRef = doc(db, 'artifacts', 'ern-93752', 'users', user.uid, 'profile', 'data');
+                onSnapshot(userRef, (snapshot) => {
+                    if (snapshot.exists()) {
+                        userData = snapshot.data();
+                        document.getElementById('balance').innerText = (userData.balance || 0).toFixed(2);
+                        document.getElementById('user-clicks').innerText = userData.clicks || 0;
+                    } else {
+                        setDoc(userRef, { balance: 0, clicks: 0, name: user.displayName, email: user.email });
+                    }
+                });
+
+                // Admin Settings & Notice listener
+                const adminRef = doc(db, 'artifacts', 'ern-93752', 'public', 'settings', 'global');
+                onSnapshot(adminRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        // Notice update
+                        if (data.notice) {
+                            document.getElementById('notice-text').innerText = "📢 " + data.notice;
+                            document.getElementById('mini-notice-bar').classList.remove('hidden');
+                        }
+                        // Task On/Off update
+                        taskSettings.task1 = data.task1 !== undefined ? data.task1 : true;
+                        taskSettings.task2 = data.task2 !== undefined ? data.task2 : true;
+                        taskSettings.task3 = data.task3 !== undefined ? data.task3 : true;
+                    }
+                });
+            } else {
+                loginScreen.classList.remove('hidden');
+                appScreen.classList.add('hidden');
+                historyScreen.classList.add('hidden');
+            }
+        });
+
+        // Tasks logic with On/Off check
+        window.playInterstitialAd = () => {
+            if (!taskSettings.task1) return showModal("দুঃখিত", "এই টাস্কটি বর্তমানে বন্ধ আছে।", "🚫");
+            
+            if (typeof show_10352096 === 'function') {
+                show_10352096().then(() => giveReward("Interstitial Ad"))
+                .catch(() => showModal("ত্রুটি", "অ্যাড লোড হয়নি।", "❌"));
+            } else { showModal("অপেক্ষা করুন", "অ্যাড সার্ভিস লোড হচ্ছে...", "⏳"); }
+        };
+
+        window.playPopupAd = () => {
+            if (!taskSettings.task2) return showModal("দুঃখিত", "এই টাস্কটি বর্তমানে বন্ধ আছে।", "🚫");
+
+            if (typeof show_10352096 === 'function') {
+                show_10352096('pop').then(() => giveReward("Popup Ad"));
+            }
+        };
+
+        window.openDirectLink = () => {
+            if (!taskSettings.task3) return showModal("দুঃখিত", "এই টাস্কটি বর্তমানে বন্ধ আছে।", "🚫");
+
+            window.open('https://omg10.com/4/10927827', '_blank');
+            setTimeout(() => giveReward("Direct Link"), 5000);
+        };
+
+        async function giveReward(taskName) {
+            const user = auth.currentUser;
+            if(!user) return;
+            const userRef = doc(db, 'artifacts', 'ern-93752', 'users', user.uid, 'profile', 'data');
+            await updateDoc(userRef, {
+                balance: increment(REWARD_AMOUNT),
+                clicks: increment(1)
+            });
+            showModal("সাফল্য!", `আপনি ${taskName} থেকে ৳${REWARD_AMOUNT} পেয়েছেন।`, "💰");
+        }
+
+        // Withdraw & History logic
+        window.openWithdrawModal = () => {
+            const balance = parseFloat(document.getElementById('balance').innerText);
+            if(balance < 50) return showModal("ব্যালেন্স কম", "কমপক্ষে ৫০ টাকা আয় করুন।", "❌");
+            withdrawModal.classList.remove('hidden');
+        };
+
+        window.closeWithdrawModal = () => {
+            withdrawModal.classList.add('hidden');
+            selectedPaymentMethod = "";
+            document.querySelectorAll('.method-btn').forEach(b => b.classList.remove('active'));
+        };
+
+        window.selectMethod = (method) => {
+            selectedPaymentMethod = method;
+            document.querySelectorAll('.method-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`btn-${method.toLowerCase()}`).classList.add('active');
+        };
+
+        window.submitWithdraw = async () => {
+            const amount = parseFloat(document.getElementById('withdraw-amount').value);
+            const number = document.getElementById('withdraw-number').value;
+            const balance = parseFloat(document.getElementById('balance').innerText);
+
+            if(!selectedPaymentMethod) return alert("পেমেন্ট মেথড সিলেক্ট করুন!");
+            if(!amount || amount < 50) return alert("সর্বনিম্ন ৫০ টাকা উত্তোলন করুন।");
+            if(amount > balance) return alert("আপনার পর্যাপ্ত ব্যালেন্স নেই।");
+            if(!number || number.length < 11) return alert("সঠিক নম্বর দিন।");
+
+            const withdrawData = {
+                userId: auth.currentUser.uid,
+                userName: auth.currentUser.displayName,
+                amount: amount,
+                number: number,
+                method: selectedPaymentMethod,
+                status: "Pending",
+                timestamp: serverTimestamp(),
+                dateStr: new Date().toLocaleString('bn-BD')
+            };
+
+            await addDoc(collection(db, 'artifacts', 'ern-93752', 'public', 'withdraws'), withdrawData);
+            const userRef = doc(db, 'artifacts', 'ern-93752', 'users', auth.currentUser.uid, 'profile', 'data');
+            await updateDoc(userRef, { balance: increment(-amount) });
+
+            closeWithdrawModal();
+            showModal("সাফল্য", "আপনার রিকোয়েস্ট পাঠানো হয়েছে। ২-২৪ ঘণ্টার মধ্যে পেমেন্ট পাবেন।", "✅");
+        };
+
+        window.toggleHistory = () => {
+            const isHidden = historyScreen.classList.contains('hidden');
+            if(isHidden) {
+                appScreen.classList.add('hidden');
+                historyScreen.classList.remove('hidden');
+                loadHistory();
+            } else {
+                appScreen.classList.remove('hidden');
+                historyScreen.classList.add('hidden');
+            }
+        };
+
+        function loadHistory() {
+            const historyList = document.getElementById('history-list');
+            historyList.innerHTML = '<div class="text-center py-10 text-slate-500">লোড হচ্ছে...</div>';
+            
+            const q = collection(db, 'artifacts', 'ern-93752', 'public', 'withdraws');
+            onSnapshot(q, (snapshot) => {
+                let html = "";
+                const docs = snapshot.docs
+                    .map(d => ({id: d.id, ...d.data()}))
+                    .filter(d => d.userId === auth.currentUser.uid);
+
+                if(docs.length === 0) {
+                    html = '<div class="text-center py-10 text-slate-500">কোন হিস্টোরি পাওয়া যায়নি।</div>';
+                } else {
+                    docs.forEach(data => {
+                        const date = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleDateString('bn-BD') : 'অপেক্ষা করুন..';
+                        const statusColor = data.status === 'Paid' ? 'text-green-500' : 'text-yellow-500';
+                        html += `
+                            <div class="glass p-4 rounded-2xl mb-3 flex justify-between items-center animate-in">
+                                <div>
+                                    <h4 class="font-bold text-sm">${data.method} - ৳${data.amount}</h4>
+                                    <p class="text-[10px] text-slate-500">${date}</p>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-[10px] font-bold px-3 py-1 rounded-full bg-slate-800 ${statusColor}">${data.status}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+                historyList.innerHTML = html;
+            });
+        }
+
+        window.showModal = (title, text, icon) => {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-text').innerText = text;
+            document.getElementById('modal-icon').innerText = icon;
+            mainModal.classList.remove('hidden');
+        };
+        window.closeModal = () => mainModal.classList.add('hidden');
+    </script>
+
+    <!-- Monetag SDK -->
     <script src='//libtl.com/sdk.js' data-zone='10352096' data-sdk='show_10352096'></script>
 
     <style>
@@ -24,6 +246,8 @@
         .task-card:active { transform: scale(0.97); }
         #mini-notice-bar { position: sticky; top: 0; z-index: 100; }
         .method-btn.active { border-color: #2563eb; background: rgba(37, 99, 235, 0.2); }
+        .animate-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="min-h-screen pb-28">
@@ -42,7 +266,6 @@
             <h1 class="text-4xl font-black text-white italic">EarnPro <span class="text-blue-500">Mini</span></h1>
             <p class="text-slate-400 mt-3 font-medium">Monetag Ads দেখে আয় করুন</p>
         </div>
-        
         <button onclick="signInWithGoogle()" class="w-full max-w-xs bg-white text-slate-900 font-black py-5 rounded-[1.5rem] flex items-center justify-center gap-4 shadow-2xl active:scale-95 transition">
             <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" class="w-6 h-6">
             গুগল দিয়ে প্রবেশ করুন
@@ -50,7 +273,7 @@
     </div>
 
     <!-- মূল অ্যাপ স্ক্রিন -->
-    <div id="app-screen" class="hidden animate-in fade-in duration-500">
+    <div id="app-screen" class="hidden animate-in">
         <header class="p-6 flex justify-between items-center bg-slate-900/40 border-b border-white/5">
             <div class="flex items-center gap-3">
                 <img id="user-photo" src="" class="w-12 h-12 rounded-full border-2 border-blue-500 shadow-xl">
@@ -65,9 +288,8 @@
             </div>
         </header>
 
-        <main class="px-6 mt-6 pb-20">
+        <main class="px-6 mt-6">
             <div class="space-y-6">
-                <!-- স্ট্যাটাস -->
                 <div class="grid grid-cols-2 gap-4">
                     <div class="glass p-5 rounded-[2rem] border-b-2 border-blue-500/50">
                         <i class="fas fa-mouse text-blue-500 mb-2"></i>
@@ -76,12 +298,11 @@
                     </div>
                     <div class="glass p-5 rounded-[2rem] border-b-2 border-purple-500/50">
                         <i class="fas fa-ad text-purple-500 mb-2"></i>
-                        <p class="text-[10px] text-slate-500 font-bold">CPM রেট</p>
+                        <p class="text-[10px] text-slate-500 font-bold">রিওয়ার্ড</p>
                         <h4 class="text-xl font-black">৳০.০৭</h4>
                     </div>
                 </div>
 
-                <!-- টাস্ক লিস্ট -->
                 <div class="space-y-4">
                     <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fas fa-play-circle text-yellow-500"></i> Monetag টাস্ক</h2>
                     
@@ -120,29 +341,43 @@
                 </div>
             </div>
         </main>
-
-        <!-- Bottom Nav -->
-        <nav class="fixed bottom-0 left-0 w-full glass border-t border-white/5 px-8 py-5 flex justify-between items-center rounded-t-[3rem] z-[100]">
-            <button class="text-blue-500 flex flex-col items-center gap-1"><i class="fas fa-home"></i><span class="text-[8px] font-bold uppercase">Home</span></button>
-            <button onclick="showModal('হিস্ট্রি', 'আপনার পেমেন্ট রেকর্ড খালি।', '📜')" class="text-slate-500 flex flex-col items-center gap-1"><i class="fas fa-history"></i><span class="text-[8px] font-bold uppercase">History</span></button>
-            <button onclick="openWithdrawModal()" class="text-slate-500 flex flex-col items-center gap-1"><i class="fas fa-wallet"></i><span class="text-[8px] font-bold uppercase">Withdraw</span></button>
-            <button onclick="auth.signOut()" class="text-red-500 flex flex-col items-center gap-1"><i class="fas fa-sign-out-alt"></i><span class="text-[8px] font-bold uppercase">Exit</span></button>
-        </nav>
     </div>
 
-    <!-- পেমেন্ট মোডাল (বিকাশ ও নগদ) -->
+    <!-- হিস্টোরি স্ক্রিন -->
+    <div id="history-screen" class="hidden animate-in">
+        <header class="p-6 flex items-center gap-4 bg-slate-900/40 border-b border-white/5">
+            <button onclick="toggleHistory()" class="text-xl p-2"><i class="fas fa-arrow-left"></i></button>
+            <h2 class="text-xl font-bold">পেমেন্ট হিস্টোরি</h2>
+        </header>
+        <main class="p-6" id="history-list"></main>
+    </div>
+
+    <!-- Bottom Nav -->
+    <nav class="fixed bottom-0 left-0 w-full glass border-t border-white/5 px-8 py-5 flex justify-between items-center rounded-t-[3rem] z-[100]">
+        <button onclick="location.reload()" class="text-blue-500 flex flex-col items-center gap-1">
+            <i class="fas fa-home"></i><span class="text-[8px] font-bold uppercase">Home</span>
+        </button>
+        <button onclick="toggleHistory()" class="text-slate-500 flex flex-col items-center gap-1">
+            <i class="fas fa-history"></i><span class="text-[8px] font-bold uppercase">History</span>
+        </button>
+        <button onclick="openWithdrawModal()" class="text-slate-500 flex flex-col items-center gap-1">
+            <i class="fas fa-wallet"></i><span class="text-[8px] font-bold uppercase">Withdraw</span>
+        </button>
+        <button onclick="logout()" class="text-red-500 flex flex-col items-center gap-1">
+            <i class="fas fa-sign-out-alt"></i><span class="text-[8px] font-bold uppercase">Exit</span>
+        </button>
+    </nav>
+
+    <!-- উইথড্র মোডাল -->
     <div id="withdraw-modal" class="fixed inset-0 bg-black/90 z-[3000] hidden flex items-center justify-center p-6 backdrop-blur-md">
         <div class="glass p-8 rounded-[3rem] w-full max-w-sm border-t-4 border-blue-600 shadow-2xl">
             <h3 class="text-xl font-bold mb-4 text-white text-center">টাকা উত্তোলন করুন</h3>
-            
             <div class="flex gap-2 mb-4">
                 <button onclick="selectMethod('Bkash')" id="btn-bkash" class="method-btn flex-1 glass py-3 rounded-2xl border border-white/10 text-xs font-bold transition">বিকাশ</button>
                 <button onclick="selectMethod('Nagad')" id="btn-nagad" class="method-btn flex-1 glass py-3 rounded-2xl border border-white/10 text-xs font-bold transition">নগদ</button>
             </div>
-
             <input type="number" id="withdraw-amount" placeholder="পরিমাণ (৳)" class="w-full bg-slate-800/50 border border-white/10 rounded-2xl p-4 mb-3 text-white outline-none focus:border-blue-500">
             <input type="number" id="withdraw-number" placeholder="আপনার নম্বর" class="w-full bg-slate-800/50 border border-white/10 rounded-2xl p-4 mb-6 text-white outline-none focus:border-blue-500">
-            
             <div class="flex gap-3">
                 <button onclick="closeWithdrawModal()" class="flex-1 bg-slate-800 py-4 rounded-2xl font-bold">বাতিল</button>
                 <button onclick="submitWithdraw()" class="flex-1 btn-gradient py-4 rounded-2xl font-black shadow-lg">রিকোয়েস্ট দিন</button>
@@ -160,142 +395,5 @@
         </div>
     </div>
 
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyDJwBkkuTwCpnEB6-JD4axqms5OniGr9-s",
-            authDomain: "ern-93752.firebaseapp.com",
-            databaseURL: "https://ern-93752-default-rtdb.firebaseio.com",
-            projectId: "ern-93752",
-            storageBucket: "ern-93752.firebasestorage.app",
-            messagingSenderId: "159583001756",
-            appId: "1:159583001756:web:c7c8380f88da94ba97e159"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-
-        const REWARD_AMOUNT = 0.07;
-        let selectedPaymentMethod = "";
-
-        // ১. Reward Ad Logic
-        function playInterstitialAd() {
-            if (typeof show_10352096 === 'function') {
-                show_10352096().then(() => giveReward("ইন্টারস্টিশিয়াল অ্যাড"))
-                .catch(err => showModal("ত্রুটি", "অ্যাড লোড হয়নি।", "❌"));
-            } else { showModal("অপেক্ষা করুন", "অ্যাড সার্ভিস লোড হচ্ছে...", "⏳"); }
-        }
-
-        function playPopupAd() {
-            if (typeof show_10352096 === 'function') {
-                show_10352096('pop').then(() => giveReward("পপ-আপ অ্যাড"))
-                .catch(e => console.log(e));
-            }
-        }
-
-        function openDirectLink() {
-            window.open('https://omg10.com/4/10927827', '_blank');
-            setTimeout(() => giveReward("ডাইরেক্ট লিঙ্ক"), 5000);
-        }
-
-        function giveReward(taskName) {
-            const user = auth.currentUser;
-            if(!user) return;
-            db.collection('users').doc(user.uid).update({
-                balance: firebase.firestore.FieldValue.increment(REWARD_AMOUNT),
-                clicks: firebase.firestore.FieldValue.increment(1)
-            }).then(() => showModal("সাফল্য!", `আপনি ৳${REWARD_AMOUNT} পেয়েছেন।`, "💰"));
-        }
-
-        // ২. উইথড্র সিস্টেম আপডেট
-        function openWithdrawModal() {
-            const currentBal = parseFloat(document.getElementById('balance').innerText);
-            if(currentBal < 50) {
-                showModal("ব্যালেন্স কম", "কমপক্ষে ৫০ টাকা আয় করুন।", "❌");
-                return;
-            }
-            document.getElementById('withdraw-modal').classList.remove('hidden');
-        }
-
-        function closeWithdrawModal() {
-            document.getElementById('withdraw-modal').classList.add('hidden');
-            selectedPaymentMethod = "";
-            document.querySelectorAll('.method-btn').forEach(b => b.classList.remove('active'));
-        }
-
-        function selectMethod(method) {
-            selectedPaymentMethod = method;
-            document.querySelectorAll('.method-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(`btn-${method.toLowerCase()}`).classList.add('active');
-        }
-
-        function submitWithdraw() {
-            const amount = parseFloat(document.getElementById('withdraw-amount').value);
-            const number = document.getElementById('withdraw-number').value;
-            const currentBal = parseFloat(document.getElementById('balance').innerText);
-
-            if(!selectedPaymentMethod) return alert("পেমেন্ট মেথড সিলেক্ট করুন!");
-            if(!amount || amount < 50) return alert("সর্বনিম্ন ৫০ টাকা উত্তোলন করতে পারবেন।");
-            if(amount > currentBal) return alert("আপনার পর্যাপ্ত ব্যালেন্স নেই।");
-            if(!number || number.length < 11) return alert("সঠিক নম্বর দিন।");
-
-            db.collection('withdraws').add({
-                userId: auth.currentUser.uid,
-                userName: auth.currentUser.displayName,
-                amount: amount,
-                number: number,
-                method: selectedPaymentMethod,
-                status: "Pending",
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                db.collection('users').doc(auth.currentUser.uid).update({
-                    balance: firebase.firestore.FieldValue.increment(-amount)
-                });
-                closeWithdrawModal();
-                showModal("সাফল্য", "রিকোয়েস্ট পাঠানো হয়েছে।", "✅");
-            });
-        }
-
-        // ৩. সিঙ্কিং এবং অথেনটিকেশন
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('app-screen').classList.remove('hidden');
-                document.getElementById('user-photo').src = user.photoURL || '';
-                document.getElementById('user-name').innerText = user.displayName;
-                document.getElementById('user-id-display').innerText = "ID: " + user.uid.substring(0, 10).toUpperCase();
-                
-                db.collection('users').doc(user.uid).onSnapshot(doc => {
-                    if (doc.exists) {
-                        const d = doc.data();
-                        document.getElementById('balance').innerText = (d.balance || 0).toFixed(2);
-                        document.getElementById('user-clicks').innerText = d.clicks || 0;
-                    } else {
-                        db.collection('users').doc(user.uid).set({ balance: 0, clicks: 0, name: user.displayName, email: user.email });
-                    }
-                });
-
-                db.collection('admin_settings').doc('global').onSnapshot(doc => {
-                    if (doc.exists && doc.data().notice) {
-                        document.getElementById('notice-text').innerText = "📢 " + doc.data().notice;
-                        document.getElementById('mini-notice-bar').classList.remove('hidden');
-                    }
-                });
-            } else {
-                document.getElementById('login-screen').classList.remove('hidden');
-                document.getElementById('app-screen').classList.add('hidden');
-            }
-        });
-
-        function signInWithGoogle() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
-
-        function showModal(title, text, icon) {
-            document.getElementById('modal-title').innerText = title;
-            document.getElementById('modal-text').innerText = text;
-            document.getElementById('modal-icon').innerText = icon;
-            document.getElementById('modal').classList.remove('hidden');
-        }
-        function closeModal() { document.getElementById('modal').classList.add('hidden'); }
-    </script>
 </body>
 </html>
