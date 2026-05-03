@@ -3,137 +3,380 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EarnPro - SAFIN VAI</title>
+    <title>EarnPro - Mini App</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, onSnapshot, query, where, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDJwBkkuTwCpnEB6-JD4axqms5OniGr9-s",
+            authDomain: "ern-93752.firebaseapp.com",
+            databaseURL: "https://ern-93752-default-rtdb.firebaseio.com",
+            projectId: "ern-93752",
+            storageBucket: "ern-93752.firebasestorage.app",
+            messagingSenderId: "159583001756",
+            appId: "1:159583001756:web:c7c8380f88da94ba97e159"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+
+        // Global state
+        let userData = null;
+        let taskSettings = { task1: true, task2: true, task3: true };
+        const REWARD_AMOUNT = 0.07;
+        let selectedPaymentMethod = "";
+
+        // Elements
+        const loginScreen = document.getElementById('login-screen');
+        const appScreen = document.getElementById('app-screen');
+        const historyScreen = document.getElementById('history-screen');
+        const withdrawModal = document.getElementById('withdraw-modal');
+        const mainModal = document.getElementById('modal');
+
+        // Auth Logic
+        window.signInWithGoogle = () => signInWithPopup(auth, provider).catch(err => console.error(err));
+        window.logout = () => signOut(auth);
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                loginScreen.classList.add('hidden');
+                appScreen.classList.remove('hidden');
+                document.getElementById('user-photo').src = user.photoURL || '';
+                document.getElementById('user-name').innerText = user.displayName;
+                document.getElementById('user-id-display').innerText = "ID: " + user.uid.substring(0, 10).toUpperCase();
+
+                // ১. ইউজার প্রোফাইল লিসেনার
+                const userRef = doc(db, 'artifacts', 'ern-93752', 'users', user.uid, 'profile', 'data');
+                onSnapshot(userRef, (snapshot) => {
+                    if (snapshot.exists()) {
+                        userData = snapshot.data();
+                        document.getElementById('balance').innerText = (userData.balance || 0).toFixed(2);
+                        document.getElementById('user-clicks').innerText = userData.clicks || 0;
+                    } else {
+                        setDoc(userRef, { balance: 0, clicks: 0, name: user.displayName, email: user.email });
+                    }
+                });
+
+                // ২. অ্যাডমিন প্যানেল সিঙ্ক (Real-time Switches & Notice)
+                // আপনার অ্যাডমিন প্যানেল এই লোকেশনে ডাটা আপডেট করবে
+                const adminSettingsRef = doc(db, 'artifacts', 'ern-93752', 'public', 'settings', 'global');
+                onSnapshot(adminSettingsRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        
+                        // নোটিশ আপডেট
+                        if (data.notice) {
+                            document.getElementById('notice-text').innerText = "📢 " + data.notice;
+                            document.getElementById('mini-notice-bar').classList.remove('hidden');
+                        } else {
+                            document.getElementById('mini-notice-bar').classList.add('hidden');
+                        }
+
+                        // সুইচ লজিক (অ্যাডমিন প্যানেল থেকে টাস্ক অন/অফ)
+                        taskSettings.task1 = (data.task1 !== false);
+                        taskSettings.task2 = (data.task2 !== false);
+                        taskSettings.task3 = (data.task3 !== false);
+
+                        updateTaskUI();
+                    }
+                });
+
+            } else {
+                loginScreen.classList.remove('hidden');
+                appScreen.classList.add('hidden');
+                historyScreen.classList.add('hidden');
+            }
+        });
+
+        function updateTaskUI() {
+            const taskCards = [
+                { id: 'task-card-1', statusId: 'status-1', active: taskSettings.task1 },
+                { id: 'task-card-2', statusId: 'status-2', active: taskSettings.task2 },
+                { id: 'task-card-3', statusId: 'status-3', active: taskSettings.task3 }
+            ];
+
+            taskCards.forEach(item => {
+                const el = document.getElementById(item.id);
+                const statusEl = document.getElementById(item.statusId);
+                if(el) {
+                    if(!item.active) {
+                        el.classList.add('opacity-40', 'grayscale', 'pointer-events-none');
+                        statusEl.innerText = "বর্তমানে বন্ধ আছে";
+                        statusEl.classList.add('text-red-500');
+                    } else {
+                        el.classList.remove('opacity-40', 'grayscale', 'pointer-events-none');
+                        statusEl.innerText = "চলমান (৳০.০৭)";
+                        statusEl.classList.remove('text-red-500');
+                    }
+                }
+            });
+        }
+
+        // Tasks
+        window.playInterstitialAd = () => {
+            if (!taskSettings.task1) return;
+            if (typeof show_10352096 === 'function') {
+                show_10352096().then(() => giveReward("রিওয়ার্ড অ্যাড"))
+                .catch(() => showModal("ত্রুটি", "অ্যাড লোড হয়নি।", "❌"));
+            } else { showModal("অপেক্ষা করুন", "অ্যাড সার্ভিস রেডি হচ্ছে...", "⏳"); }
+        };
+
+        window.playPopupAd = () => {
+            if (!taskSettings.task2) return;
+            if (typeof show_10352096 === 'function') {
+                show_10352096('pop').then(() => giveReward("পপ-আপ টাস্ক"));
+            }
+        };
+
+        window.openDirectLink = () => {
+            if (!taskSettings.task3) return;
+            window.open('https://omg10.com/4/10927827', '_blank');
+            setTimeout(() => giveReward("ডাইরেক্ট লিঙ্ক"), 5000);
+        };
+
+        async function giveReward(taskName) {
+            const user = auth.currentUser;
+            if(!user) return;
+            const userRef = doc(db, 'artifacts', 'ern-93752', 'users', user.uid, 'profile', 'data');
+            await updateDoc(userRef, {
+                balance: increment(REWARD_AMOUNT),
+                clicks: increment(1)
+            });
+            showModal("সফল!", `${taskName} থেকে ৳${REWARD_AMOUNT} যোগ হয়েছে।`, "💰");
+        }
+
+        // Withdraw & UI Helpers
+        window.openWithdrawModal = () => {
+            const balance = parseFloat(document.getElementById('balance').innerText);
+            if(balance < 50) return showModal("ব্যালেন্স কম", "উইথড্র করতে কমপক্ষে ৫০ টাকা প্রয়োজন।", "❌");
+            withdrawModal.classList.remove('hidden');
+        };
+
+        window.closeWithdrawModal = () => withdrawModal.classList.add('hidden');
+
+        window.selectMethod = (method) => {
+            selectedPaymentMethod = method;
+            document.querySelectorAll('.method-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`btn-${method.toLowerCase()}`).classList.add('active');
+        };
+
+        window.submitWithdraw = async () => {
+            const amount = parseFloat(document.getElementById('withdraw-amount').value);
+            const number = document.getElementById('withdraw-number').value;
+            const balance = parseFloat(document.getElementById('balance').innerText);
+
+            if(!selectedPaymentMethod || !amount || amount < 50 || amount > balance || number.length < 11) {
+                return alert("সব তথ্য সঠিকভাবে দিন।");
+            }
+
+            const withdrawData = {
+                userId: auth.currentUser.uid,
+                userName: auth.currentUser.displayName,
+                amount: amount,
+                number: number,
+                method: selectedPaymentMethod,
+                status: "Pending",
+                timestamp: serverTimestamp()
+            };
+
+            await addDoc(collection(db, 'artifacts', 'ern-93752', 'public', 'data', 'withdraws'), withdrawData);
+            const userRef = doc(db, 'artifacts', 'ern-93752', 'users', auth.currentUser.uid, 'profile', 'data');
+            await updateDoc(userRef, { balance: increment(-amount) });
+
+            closeWithdrawModal();
+            showModal("সফল", "রিকোয়েস্ট পাঠানো হয়েছে। ২-২৪ ঘণ্টার মধ্যে পেমেন্ট পাবেন।", "✅");
+        };
+
+        window.toggleHistory = () => {
+            const isHidden = historyScreen.classList.contains('hidden');
+            if(isHidden) {
+                appScreen.classList.add('hidden');
+                historyScreen.classList.remove('hidden');
+                loadHistory();
+            } else {
+                appScreen.classList.remove('hidden');
+                historyScreen.classList.add('hidden');
+            }
+        };
+
+        function loadHistory() {
+            const historyList = document.getElementById('history-list');
+            historyList.innerHTML = '<div class="text-center py-10 opacity-50">লোড হচ্ছে...</div>';
+            const q = collection(db, 'artifacts', 'ern-93752', 'public', 'data', 'withdraws');
+            onSnapshot(q, (snapshot) => {
+                let html = "";
+                const docs = snapshot.docs
+                    .map(d => ({id: d.id, ...d.data()}))
+                    .filter(d => d.userId === auth.currentUser.uid);
+
+                if(docs.length === 0) {
+                    html = '<div class="text-center py-10 opacity-50">কোন হিস্টোরি নেই।</div>';
+                } else {
+                    docs.forEach(data => {
+                        const statusColor = data.status === 'Paid' ? 'text-green-500' : 'text-yellow-500';
+                        html += `
+                            <div class="glass p-4 rounded-2xl mb-3 flex justify-between items-center border-l-4 border-blue-500">
+                                <div>
+                                    <h4 class="font-bold text-sm">${data.method} - ৳${data.amount}</h4>
+                                    <p class="text-[10px] opacity-50">${data.number}</p>
+                                </div>
+                                <span class="text-[10px] font-bold px-3 py-1 rounded-full bg-slate-800 ${statusColor}">${data.status}</span>
+                            </div>
+                        `;
+                    });
+                }
+                historyList.innerHTML = html;
+            });
+        }
+
+        window.showModal = (title, text, icon) => {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-text').innerText = text;
+            document.getElementById('modal-icon').innerText = icon;
+            mainModal.classList.remove('hidden');
+        };
+        window.closeModal = () => mainModal.classList.add('hidden');
+    </script>
 
     <!-- Monetag SDK -->
     <script src='//libtl.com/sdk.js' data-zone='10352096' data-sdk='show_10352096'></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap');
-        body { font-family: 'Hind Siliguri', sans-serif; background: #020617; color: #f1f5f9; margin: 0; overflow-x: hidden; }
-        .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
+        body { font-family: 'Hind Siliguri', sans-serif; background: #020617; color: #f1f5f9; margin: 0; }
+        .glass { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.05); }
         .btn-gradient { background: linear-gradient(135deg, #2563eb, #7c3aed); }
-        .task-card { transition: all 0.3s ease; cursor: pointer; }
-        .task-card.disabled { opacity: 0.5; filter: grayscale(1); cursor: not-allowed; pointer-events: none; }
-        #mini-notice-bar { position: sticky; top: 0; z-index: 100; }
-        .method-btn.active { border-color: #2563eb; background: rgba(37, 99, 235, 0.2); }
+        .task-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
+        .task-card:active { transform: scale(0.95); }
+        .method-btn.active { border: 2px solid #2563eb; background: rgba(37, 99, 235, 0.1); color: white; }
     </style>
 </head>
-<body class="min-h-screen pb-28">
+<body class="min-h-screen pb-24">
 
-    <!-- Notice -->
-    <div id="mini-notice-bar" class="bg-blue-600 text-white py-2 px-4 hidden shadow-lg">
+    <!-- Notice Bar (Controlled by Admin) -->
+    <div id="mini-notice-bar" class="bg-blue-600 text-white py-2 px-4 hidden sticky top-0 z-[1000] shadow-xl">
         <marquee id="notice-text" behavior="scroll" direction="left" scrollamount="6" class="text-xs font-bold"></marquee>
     </div>
 
-    <!-- Login Screen -->
+    <!-- Login -->
     <div id="login-screen" class="fixed inset-0 bg-slate-950 z-[2000] flex flex-col items-center justify-center p-8">
         <div class="text-center mb-10">
-            <div class="w-24 h-24 bg-blue-600 rounded-[2rem] mx-auto flex items-center justify-center text-5xl mb-6 shadow-2xl shadow-blue-500/30 animate-pulse">
+            <div class="w-24 h-24 bg-blue-600 rounded-[2.5rem] mx-auto flex items-center justify-center text-5xl mb-6 shadow-2xl shadow-blue-500/40 animate-pulse">
                 <i class="fas fa-bolt text-white"></i>
             </div>
-            <h1 class="text-4xl font-black text-white italic tracking-wider">SAFIN VAI <span class="text-blue-500">PRO</span></h1>
-            <p class="text-slate-400 mt-3 font-medium">সহজ টাস্ক কমপ্লিট করে আয় করুন</p>
+            <h1 class="text-4xl font-black text-white italic">SAFIN VAI <span class="text-blue-500 text-3xl">PRO</span></h1>
+            <p class="text-slate-400 mt-3 font-medium">অ্যাড দেখে আয় করার সেরা প্ল্যাটফর্ম</p>
         </div>
-        <button onclick="signInWithGoogle()" class="w-full max-w-xs bg-white text-slate-900 font-black py-5 rounded-[1.5rem] flex items-center justify-center gap-4 shadow-2xl active:scale-95 transition">
+        <button onclick="signInWithGoogle()" class="w-full max-w-xs bg-white text-slate-900 font-black py-5 rounded-[2rem] flex items-center justify-center gap-4 shadow-2xl active:scale-95 transition">
             <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" class="w-6 h-6">
             গুগল দিয়ে প্রবেশ করুন
         </button>
     </div>
 
-    <!-- Main App -->
-    <div id="app-screen" class="hidden animate-in fade-in duration-500">
-        <header class="p-6 flex justify-between items-center bg-slate-900/40 border-b border-white/5">
+    <!-- Main Screen -->
+    <div id="app-screen" class="hidden">
+        <header class="p-6 flex justify-between items-center border-b border-white/5">
             <div class="flex items-center gap-3">
-                <img id="user-photo" src="" class="w-12 h-12 rounded-full border-2 border-blue-500 shadow-xl">
+                <img id="user-photo" src="" class="w-12 h-12 rounded-full border-2 border-blue-500">
                 <div>
                     <h4 id="user-name" class="text-sm font-bold text-white truncate max-w-[120px]">User</h4>
                     <p class="text-[10px] text-blue-400 font-mono" id="user-id-display">ID: ---</p>
                 </div>
             </div>
-            <div class="glass px-5 py-3 rounded-2xl border-blue-500/20 text-right">
-                <p class="text-[9px] text-slate-500 font-bold uppercase">ব্যালেন্স</p>
+            <div class="glass px-5 py-3 rounded-2xl text-right">
+                <p class="text-[9px] opacity-50 font-bold uppercase">ব্যালেন্স</p>
                 <h3 class="text-xl font-black text-green-500">৳<span id="balance">0.00</span></h3>
             </div>
         </header>
 
         <main class="px-6 mt-6">
             <div class="grid grid-cols-2 gap-4 mb-8">
-                <div class="glass p-5 rounded-[2rem] border-b-2 border-blue-500/50">
+                <div class="glass p-5 rounded-[2rem] text-center border-b-2 border-blue-500/50">
                     <i class="fas fa-mouse text-blue-500 mb-2"></i>
-                    <p class="text-[10px] text-slate-500 font-bold">মোট ক্লিক</p>
+                    <p class="text-[10px] opacity-50 font-bold uppercase">মোট ক্লিক</p>
                     <h4 id="user-clicks" class="text-xl font-black">0</h4>
                 </div>
-                <div class="glass p-5 rounded-[2rem] border-b-2 border-purple-500/50">
-                    <i class="fas fa-user-shield text-purple-500 mb-2"></i>
-                    <p class="text-[10px] text-slate-500 font-bold">অনলাইন এডমিন</p>
-                    <h4 class="text-sm font-black text-purple-400">SAFIN VAI</h4>
+                <div class="glass p-5 rounded-[2rem] text-center border-b-2 border-purple-500/50">
+                    <i class="fas fa-gift text-purple-500 mb-2"></i>
+                    <p class="text-[10px] opacity-50 font-bold uppercase">বোনাস</p>
+                    <h4 class="text-xl font-black">৳০.০৭</h4>
                 </div>
             </div>
 
             <div class="space-y-4">
-                <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fas fa-play-circle text-yellow-500"></i> আপনার টাস্কসমূহ</h2>
+                <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fas fa-bolt text-yellow-500"></i> আপনার টাস্কসমূহ</h2>
                 
-                <!-- Task Cards will be controlled by Admin -->
-                <div id="card-task1" onclick="runTask('task1')" class="task-card glass p-5 rounded-[2rem] flex items-center justify-between border-l-4 border-blue-500">
+                <div id="task-card-1" onclick="playInterstitialAd()" class="task-card glass p-5 rounded-[2.5rem] flex items-center justify-between border-l-4 border-blue-500">
                     <div class="flex items-center gap-4">
                         <div class="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500"><i class="fas fa-video"></i></div>
                         <div>
                             <h4 class="font-bold text-sm">ভিডিও অ্যাড টাস্ক</h4>
-                            <p id="status-task1" class="text-[10px] text-slate-500 italic">অপেক্ষা করুন...</p>
+                            <p id="status-1" class="text-[10px] text-green-500 font-bold">চলমান (৳০.০৭)</p>
                         </div>
                     </div>
-                    <i class="fas fa-chevron-right text-slate-700"></i>
+                    <i class="fas fa-play-circle text-blue-500 text-xl"></i>
                 </div>
 
-                <div id="card-task2" onclick="runTask('task2')" class="task-card glass p-5 rounded-[2rem] flex items-center justify-between border-l-4 border-purple-500">
+                <div id="task-card-2" onclick="playPopupAd()" class="task-card glass p-5 rounded-[2.5rem] flex items-center justify-between border-l-4 border-purple-500">
                     <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 bg-purple-500/10 rounded-2xl flex items-center justify-center text-purple-500"><i class="fas fa-window-restore"></i></div>
+                        <div class="w-12 h-12 bg-purple-500/10 rounded-2xl flex items-center justify-center text-purple-500"><i class="fas fa-clone"></i></div>
                         <div>
                             <h4 class="font-bold text-sm">পপ-আপ টাস্ক</h4>
-                            <p id="status-task2" class="text-[10px] text-slate-500 italic">অপেক্ষা করুন...</p>
+                            <p id="status-2" class="text-[10px] text-green-500 font-bold">চলমান (৳০.০৭)</p>
                         </div>
                     </div>
-                    <i class="fas fa-chevron-right text-slate-700"></i>
+                    <i class="fas fa-play-circle text-purple-500 text-xl"></i>
                 </div>
 
-                <div id="card-task3" onclick="runTask('task3')" class="task-card glass p-5 rounded-[2rem] flex items-center justify-between border-l-4 border-green-500">
+                <div id="task-card-3" onclick="openDirectLink()" class="task-card glass p-5 rounded-[2.5rem] flex items-center justify-between border-l-4 border-green-500 shadow-xl">
                     <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 bg-green-500/10 rounded-2xl flex items-center justify-center text-green-500"><i class="fas fa-link"></i></div>
+                        <div class="w-12 h-12 bg-green-500/10 rounded-2xl flex items-center justify-center text-green-500"><i class="fas fa-external-link-alt"></i></div>
                         <div>
                             <h4 class="font-bold text-sm">ডাইরেক্ট লিঙ্ক টাস্ক</h4>
-                            <p id="status-task3" class="text-[10px] text-slate-500 italic">অপেক্ষা করুন...</p>
+                            <p id="status-3" class="text-[10px] text-green-500 font-bold">চলমান (৳০.০৭)</p>
                         </div>
                     </div>
-                    <i class="fas fa-external-link-alt text-slate-700"></i>
+                    <i class="fas fa-external-link text-green-500 text-xl"></i>
                 </div>
             </div>
         </main>
-
-        <!-- Nav -->
-        <nav class="fixed bottom-0 left-0 w-full glass border-t border-white/5 px-8 py-5 flex justify-around items-center rounded-t-[3rem] z-[100]">
-            <button onclick="location.reload()" class="text-blue-500 flex flex-col items-center gap-1"><i class="fas fa-home"></i><span class="text-[8px] font-bold uppercase">Home</span></button>
-            <button onclick="openWithdrawModal()" class="text-slate-500 flex flex-col items-center gap-1"><i class="fas fa-wallet"></i><span class="text-[8px] font-bold uppercase">Withdraw</span></button>
-            <button onclick="auth.signOut()" class="text-red-500 flex flex-col items-center gap-1"><i class="fas fa-sign-out-alt"></i><span class="text-[8px] font-bold uppercase">Exit</span></button>
-        </nav>
     </div>
 
-    <!-- Modals (Withdraw & Alerts) -->
+    <!-- History Screen -->
+    <div id="history-screen" class="hidden">
+        <header class="p-6 flex items-center gap-4 border-b border-white/5">
+            <button onclick="toggleHistory()" class="text-xl"><i class="fas fa-arrow-left"></i></button>
+            <h2 class="text-xl font-bold">পেমেন্ট হিস্টোরি</h2>
+        </header>
+        <main class="p-6" id="history-list"></main>
+    </div>
+
+    <!-- Bottom Nav -->
+    <nav class="fixed bottom-0 left-0 w-full glass border-t border-white/5 px-8 py-5 flex justify-around items-center rounded-t-[3rem] z-[100]">
+        <button onclick="location.reload()" class="text-blue-500 flex flex-col items-center gap-1"><i class="fas fa-house"></i><span class="text-[8px] font-bold uppercase">Home</span></button>
+        <button onclick="toggleHistory()" class="text-slate-500 flex flex-col items-center gap-1"><i class="fas fa-history"></i><span class="text-[8px] font-bold uppercase">History</span></button>
+        <button onclick="openWithdrawModal()" class="text-slate-500 flex flex-col items-center gap-1"><i class="fas fa-wallet"></i><span class="text-[8px] font-bold uppercase">Cashout</span></button>
+        <button onclick="logout()" class="text-red-500 flex flex-col items-center gap-1"><i class="fas fa-power-off"></i><span class="text-[8px] font-bold uppercase">Exit</span></button>
+    </nav>
+
+    <!-- Modals -->
     <div id="withdraw-modal" class="fixed inset-0 bg-black/95 z-[3000] hidden flex items-center justify-center p-6 backdrop-blur-md">
         <div class="glass p-8 rounded-[3rem] w-full max-w-sm border-t-4 border-blue-600">
-            <h3 class="text-xl font-bold mb-4 text-white text-center">টাকা উত্তোলন</h3>
+            <h3 class="text-xl font-bold mb-6 text-center">উইথড্র রিকোয়েস্ট</h3>
             <div class="flex gap-2 mb-4">
-                <button onclick="selectMethod('Bkash')" id="btn-bkash" class="method-btn flex-1 glass py-3 rounded-2xl text-xs font-bold transition">বিকাশ</button>
-                <button onclick="selectMethod('Nagad')" id="btn-nagad" class="method-btn flex-1 glass py-3 rounded-2xl text-xs font-bold transition">নগদ</button>
+                <button onclick="selectMethod('Bkash')" id="btn-bkash" class="method-btn flex-1 glass py-4 rounded-2xl text-xs font-bold transition">বিকাশ</button>
+                <button onclick="selectMethod('Nagad')" id="btn-nagad" class="method-btn flex-1 glass py-4 rounded-2xl text-xs font-bold transition">নগদ</button>
             </div>
-            <input type="number" id="withdraw-amount" placeholder="পরিমাণ (৳)" class="w-full bg-slate-800/50 border border-white/10 rounded-2xl p-4 mb-3 text-white">
-            <input type="number" id="withdraw-number" placeholder="নম্বর দিন" class="w-full bg-slate-800/50 border border-white/10 rounded-2xl p-4 mb-6 text-white">
+            <input type="number" id="withdraw-amount" placeholder="পরিমাণ (৳)" class="w-full bg-slate-900/50 border border-white/10 rounded-2xl p-4 mb-3 text-white outline-none">
+            <input type="number" id="withdraw-number" placeholder="১১ ডিজিটের নম্বর দিন" class="w-full bg-slate-900/50 border border-white/10 rounded-2xl p-4 mb-8 text-white outline-none">
             <div class="flex gap-3">
                 <button onclick="closeWithdrawModal()" class="flex-1 bg-slate-800 py-4 rounded-2xl font-bold text-sm">বাতিল</button>
                 <button onclick="submitWithdraw()" class="flex-1 btn-gradient py-4 rounded-2xl font-black text-sm">সাবমিট</button>
@@ -143,148 +386,12 @@
 
     <div id="modal" class="fixed inset-0 bg-black/90 z-[4000] hidden flex items-center justify-center p-6 backdrop-blur-md">
         <div class="glass p-8 rounded-[3rem] w-full max-w-xs text-center border-t-4 border-blue-600">
-            <div id="modal-icon" class="text-5xl mb-4"></div>
-            <h3 id="modal-title" class="text-xl font-bold mb-2"></h3>
-            <p id="modal-text" class="text-sm text-slate-400 mb-8"></p>
+            <div id="modal-icon" class="text-6xl mb-4"></div>
+            <h3 id="modal-title" class="text-xl font-bold mb-2 text-white"></h3>
+            <p id="modal-text" class="text-sm opacity-50 mb-8"></p>
             <button onclick="closeModal()" class="w-full btn-gradient py-4 rounded-2xl font-black">বন্ধ করুন</button>
         </div>
     </div>
 
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyDJwBkkuTwCpnEB6-JD4axqms5OniGr9-s",
-            authDomain: "ern-93752.firebaseapp.com",
-            projectId: "ern-93752",
-            storageBucket: "ern-93752.firebasestorage.app",
-            messagingSenderId: "159583001756",
-            appId: "1:159583001756:web:c7c8380f88da94ba97e159"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-        const REWARD = 0.07;
-        let globalSettings = { task1: true, task2: true, task3: true, notice: "" };
-
-        // ১. আপনার ড্যাশবোর্ড থেকে ডেটা নিয়ে সিঙ্ক করা
-        function listenToAdmin() {
-            // পাবলিক সেটিংস সিঙ্ক (টাস্ক অন/অফ এবং নোটিশ)
-            db.collection('artifacts').doc('ern-93752').collection('public').doc('settings').onSnapshot(doc => {
-                if(doc.exists) {
-                    globalSettings = doc.data();
-                    updateAppStatus();
-                }
-            });
-        }
-
-        function updateAppStatus() {
-            // নোটিশ আপডেট
-            const noticeBar = document.getElementById('mini-notice-bar');
-            if(globalSettings.notice) {
-                document.getElementById('notice-text').innerText = "📢 " + globalSettings.notice;
-                noticeBar.classList.remove('hidden');
-            } else { noticeBar.classList.add('hidden'); }
-
-            // টাস্ক কার্ড স্ট্যাটাস আপডেট
-            ['task1', 'task2', 'task3'].forEach(id => {
-                const card = document.getElementById(`card-${id}`);
-                const statusText = document.getElementById(`status-${id}`);
-                const isActive = globalSettings[id] !== false;
-
-                if(isActive) {
-                    card.classList.remove('disabled');
-                    statusText.innerText = "চলমান (৳০.০৭)";
-                    statusText.className = "text-[10px] text-green-500 font-bold";
-                } else {
-                    card.classList.add('disabled');
-                    statusText.innerText = "বর্তমানে বন্ধ আছে";
-                    statusText.className = "text-[10px] text-red-500 font-bold";
-                }
-            });
-        }
-
-        // ২. টাস্ক রান করা
-        window.runTask = (id) => {
-            if(globalSettings[id] === false) return;
-
-            if(id === 'task3') {
-                window.open('https://omg10.com/4/10927827', '_blank');
-                setTimeout(() => giveReward(), 5000);
-            } else {
-                if(typeof show_10352096 === 'function') {
-                    show_10352096().then(() => giveReward())
-                    .catch(() => showModal("ত্রুটি", "অ্যাড লোড হয়নি।", "❌"));
-                } else { showModal("অপেক্ষা করুন", "অ্যাড সার্ভিস রেডি হচ্ছে...", "⏳"); }
-            }
-        };
-
-        function giveReward() {
-            const user = auth.currentUser;
-            db.collection('artifacts').doc('ern-93752').collection('users').doc(user.uid).collection('profile').doc('data').update({
-                balance: firebase.firestore.FieldValue.increment(REWARD),
-                clicks: firebase.firestore.FieldValue.increment(1)
-            }).then(() => showModal("অভিনন্দন!", "৳০.০৭ আপনার ব্যালেন্সে যোগ হয়েছে।", "💰"));
-        }
-
-        // ৩. ইউজার ডাটা লিসেনার
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('app-screen').classList.remove('hidden');
-                document.getElementById('user-photo').src = user.photoURL || '';
-                document.getElementById('user-name').innerText = user.displayName;
-                document.getElementById('user-id-display').innerText = "ID: " + user.uid.substring(0, 10).toUpperCase();
-
-                const userRef = db.collection('artifacts').doc('ern-93752').collection('users').doc(user.uid).collection('profile').doc('data');
-                userRef.onSnapshot(doc => {
-                    if (doc.exists) {
-                        const d = doc.data();
-                        document.getElementById('balance').innerText = (d.balance || 0).toFixed(2);
-                        document.getElementById('user-clicks').innerText = d.clicks || 0;
-                    } else {
-                        userRef.set({ balance: 0, clicks: 0, name: user.displayName });
-                    }
-                });
-                listenToAdmin();
-            } else {
-                document.getElementById('login-screen').classList.remove('hidden');
-                document.getElementById('app-screen').classList.add('hidden');
-            }
-        });
-
-        // ৪. উইথড্র সিস্টেম ও অন্যান্য
-        let selectedMethod = "";
-        window.selectMethod = (m) => {
-            selectedMethod = m;
-            document.querySelectorAll('.method-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(`btn-${m.toLowerCase()}`).classList.add('active');
-        };
-
-        window.submitWithdraw = () => {
-            const amount = parseFloat(document.getElementById('withdraw-amount').value);
-            const num = document.getElementById('withdraw-number').value;
-            if(!selectedMethod || amount < 50 || num.length < 11) return alert("সব তথ্য সঠিক দিন!");
-            
-            db.collection('artifacts').doc('ern-93752').collection('public').doc('data').collection('withdraws').add({
-                uid: auth.currentUser.uid,
-                name: auth.currentUser.displayName,
-                amount, num, method: selectedMethod, status: 'Pending', time: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                showModal("সাফল্য", "উইথড্র রিকোয়েস্ট পাঠানো হয়েছে।", "✅");
-                closeWithdrawModal();
-            });
-        };
-
-        window.signInWithGoogle = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
-        window.openWithdrawModal = () => document.getElementById('withdraw-modal').classList.remove('hidden');
-        window.closeWithdrawModal = () => document.getElementById('withdraw-modal').classList.add('hidden');
-        window.showModal = (title, text, icon) => {
-            document.getElementById('modal-title').innerText = title;
-            document.getElementById('modal-text').innerText = text;
-            document.getElementById('modal-icon').innerText = icon;
-            document.getElementById('modal').classList.remove('hidden');
-        };
-        window.closeModal = () => document.getElementById('modal').classList.add('hidden');
-    </script>
 </body>
 </html>
