@@ -60,7 +60,7 @@
                 document.getElementById('user-name').innerText = user.displayName;
                 document.getElementById('user-id-display').innerText = "ID: " + user.uid.substring(0, 10).toUpperCase();
 
-                // User data listener
+                // 1. User profile listener
                 const userRef = doc(db, 'artifacts', 'ern-93752', 'users', user.uid, 'profile', 'data');
                 onSnapshot(userRef, (snapshot) => {
                     if (snapshot.exists()) {
@@ -72,22 +72,30 @@
                     }
                 });
 
-                // Admin Settings & Notice listener
+                // 2. Admin Global Settings (Task On/Off & Notice)
+                // Path: artifacts -> ern-93752 -> public -> settings -> global
                 const adminRef = doc(db, 'artifacts', 'ern-93752', 'public', 'settings', 'global');
                 onSnapshot(adminRef, (docSnap) => {
                     if (docSnap.exists()) {
                         const data = docSnap.data();
-                        // Notice update
+                        
+                        // Notice logic
                         if (data.notice) {
                             document.getElementById('notice-text').innerText = "📢 " + data.notice;
                             document.getElementById('mini-notice-bar').classList.remove('hidden');
+                        } else {
+                            document.getElementById('mini-notice-bar').classList.add('hidden');
                         }
-                        // Task On/Off update
-                        taskSettings.task1 = data.task1 !== undefined ? data.task1 : true;
-                        taskSettings.task2 = data.task2 !== undefined ? data.task2 : true;
-                        taskSettings.task3 = data.task3 !== undefined ? data.task3 : true;
+
+                        // Task On/Off logic (Strict Check)
+                        taskSettings.task1 = (data.task1 !== false); // Default true unless false
+                        taskSettings.task2 = (data.task2 !== false);
+                        taskSettings.task3 = (data.task3 !== false);
+
+                        // Visual feedback on UI (Optional: can fade out disabled tasks)
+                        updateTaskUI();
                     }
-                });
+                }, (error) => console.error("Admin Settings Error:", error));
             } else {
                 loginScreen.classList.remove('hidden');
                 appScreen.classList.add('hidden');
@@ -95,9 +103,27 @@
             }
         });
 
-        // Tasks logic with On/Off check
+        function updateTaskUI() {
+            const tasks = ['task-card-1', 'task-card-2', 'task-card-3'];
+            const states = [taskSettings.task1, taskSettings.task2, taskSettings.task3];
+            
+            tasks.forEach((id, index) => {
+                const el = document.getElementById(id);
+                if(el) {
+                    if(!states[index]) {
+                        el.style.opacity = "0.5";
+                        el.style.filter = "grayscale(0.8)";
+                    } else {
+                        el.style.opacity = "1";
+                        el.style.filter = "none";
+                    }
+                }
+            });
+        }
+
+        // Tasks logic
         window.playInterstitialAd = () => {
-            if (!taskSettings.task1) return showModal("দুঃখিত", "এই টাস্কটি বর্তমানে বন্ধ আছে।", "🚫");
+            if (!taskSettings.task1) return showModal("দুঃখিত", "অ্যাডমিন এই টাস্কটি সাময়িকভাবে বন্ধ রেখেছেন।", "🚫");
             
             if (typeof show_10352096 === 'function') {
                 show_10352096().then(() => giveReward("Interstitial Ad"))
@@ -106,7 +132,7 @@
         };
 
         window.playPopupAd = () => {
-            if (!taskSettings.task2) return showModal("দুঃখিত", "এই টাস্কটি বর্তমানে বন্ধ আছে।", "🚫");
+            if (!taskSettings.task2) return showModal("দুঃখিত", "পপ-আপ টাস্ক বর্তমানে বন্ধ আছে।", "🚫");
 
             if (typeof show_10352096 === 'function') {
                 show_10352096('pop').then(() => giveReward("Popup Ad"));
@@ -114,7 +140,7 @@
         };
 
         window.openDirectLink = () => {
-            if (!taskSettings.task3) return showModal("দুঃখিত", "এই টাস্কটি বর্তমানে বন্ধ আছে।", "🚫");
+            if (!taskSettings.task3) return showModal("দুঃখিত", "ডাইরেক্ট লিঙ্ক বর্তমানে বন্ধ আছে।", "🚫");
 
             window.open('https://omg10.com/4/10927827', '_blank');
             setTimeout(() => giveReward("Direct Link"), 5000);
@@ -131,7 +157,7 @@
             showModal("সাফল্য!", `আপনি ${taskName} থেকে ৳${REWARD_AMOUNT} পেয়েছেন।`, "💰");
         }
 
-        // Withdraw & History logic
+        // Withdraw & Modal functions
         window.openWithdrawModal = () => {
             const balance = parseFloat(document.getElementById('balance').innerText);
             if(balance < 50) return showModal("ব্যালেন্স কম", "কমপক্ষে ৫০ টাকা আয় করুন।", "❌");
@@ -194,7 +220,6 @@
         function loadHistory() {
             const historyList = document.getElementById('history-list');
             historyList.innerHTML = '<div class="text-center py-10 text-slate-500">লোড হচ্ছে...</div>';
-            
             const q = collection(db, 'artifacts', 'ern-93752', 'public', 'withdraws');
             onSnapshot(q, (snapshot) => {
                 let html = "";
@@ -252,12 +277,10 @@
 </head>
 <body class="min-h-screen pb-28">
 
-    <!-- অ্যাডমিন নোটিশ -->
     <div id="mini-notice-bar" class="bg-blue-600 text-white py-2 px-4 hidden shadow-lg">
         <marquee id="notice-text" behavior="scroll" direction="left" scrollamount="6" class="text-xs font-bold"></marquee>
     </div>
 
-    <!-- লগইন স্ক্রিন -->
     <div id="login-screen" class="fixed inset-0 bg-slate-950 z-[2000] flex flex-col items-center justify-center p-8">
         <div class="text-center mb-10">
             <div class="w-24 h-24 bg-blue-600 rounded-[2rem] mx-auto flex items-center justify-center text-5xl mb-6 shadow-2xl shadow-blue-500/30">
@@ -272,7 +295,6 @@
         </button>
     </div>
 
-    <!-- মূল অ্যাপ স্ক্রিন -->
     <div id="app-screen" class="hidden animate-in">
         <header class="p-6 flex justify-between items-center bg-slate-900/40 border-b border-white/5">
             <div class="flex items-center gap-3">
@@ -291,59 +313,59 @@
         <main class="px-6 mt-6">
             <div class="space-y-6">
                 <div class="grid grid-cols-2 gap-4">
-                    <div class="glass p-5 rounded-[2rem] border-b-2 border-blue-500/50">
+                    <div class="glass p-5 rounded-[2rem] border-b-2 border-blue-500/50 text-center">
                         <i class="fas fa-mouse text-blue-500 mb-2"></i>
-                        <p class="text-[10px] text-slate-500 font-bold">মোট ক্লিক</p>
+                        <p class="text-[10px] text-slate-500 font-bold uppercase">মোট ক্লিক</p>
                         <h4 id="user-clicks" class="text-xl font-black">0</h4>
                     </div>
-                    <div class="glass p-5 rounded-[2rem] border-b-2 border-purple-500/50">
-                        <i class="fas fa-ad text-purple-500 mb-2"></i>
-                        <p class="text-[10px] text-slate-500 font-bold">রিওয়ার্ড</p>
+                    <div class="glass p-5 rounded-[2rem] border-b-2 border-purple-500/50 text-center">
+                        <i class="fas fa-coins text-purple-500 mb-2"></i>
+                        <p class="text-[10px] text-slate-500 font-bold uppercase">প্রতি কাজ</p>
                         <h4 class="text-xl font-black">৳০.০৭</h4>
                     </div>
                 </div>
 
                 <div class="space-y-4">
-                    <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fas fa-play-circle text-yellow-500"></i> Monetag টাস্ক</h2>
+                    <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fas fa-tasks text-blue-500"></i> আপনার টাস্ক</h2>
                     
-                    <div onclick="playInterstitialAd()" class="task-card glass p-5 rounded-[2rem] flex items-center justify-between border-l-4 border-blue-500">
+                    <div id="task-card-1" onclick="playInterstitialAd()" class="task-card glass p-5 rounded-[2.5rem] flex items-center justify-between border-l-4 border-blue-500 shadow-lg">
                         <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500"><i class="fas fa-tv"></i></div>
+                            <div class="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500 text-xl"><i class="fas fa-tv"></i></div>
                             <div>
-                                <h4 class="font-bold text-sm">রিওয়ার্ড অ্যাড (১)</h4>
-                                <p class="text-[10px] text-slate-500">পুরোটা দেখলে পাবেন ৳০.০৭</p>
+                                <h4 class="font-bold text-base text-white">রিওয়ার্ড অ্যাড (১)</h4>
+                                <p class="text-[11px] text-slate-400">ব্যালেন্স যোগ হবে তৎক্ষণাৎ</p>
                             </div>
                         </div>
-                        <i class="fas fa-chevron-right text-slate-700"></i>
+                        <i class="fas fa-circle-play text-blue-500 text-2xl"></i>
                     </div>
 
-                    <div onclick="playPopupAd()" class="task-card glass p-5 rounded-[2rem] flex items-center justify-between border-l-4 border-purple-500">
+                    <div id="task-card-2" onclick="playPopupAd()" class="task-card glass p-5 rounded-[2.5rem] flex items-center justify-between border-l-4 border-purple-500 shadow-lg">
                         <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 bg-purple-500/10 rounded-2xl flex items-center justify-center text-purple-500"><i class="fas fa-window-restore"></i></div>
+                            <div class="w-14 h-14 bg-purple-500/10 rounded-2xl flex items-center justify-center text-purple-500 text-xl"><i class="fas fa-window-restore"></i></div>
                             <div>
-                                <h4 class="font-bold text-sm">রিওয়ার্ড পপ-আপ (২)</h4>
-                                <p class="text-[10px] text-slate-500">পপ-আপ দেখলে পাবেন ৳০.০৭</p>
+                                <h4 class="font-bold text-base text-white">রিওয়ার্ড পপ-আপ (২)</h4>
+                                <p class="text-[11px] text-slate-400">সহজ এবং দ্রুত কাজ</p>
                             </div>
                         </div>
-                        <i class="fas fa-chevron-right text-slate-700"></i>
+                        <i class="fas fa-circle-play text-purple-500 text-2xl"></i>
                     </div>
 
-                    <div onclick="openDirectLink()" class="task-card glass p-5 rounded-[2rem] flex items-center justify-between border-l-4 border-green-500">
+                    <div id="task-card-3" onclick="openDirectLink()" class="task-card glass p-5 rounded-[2.5rem] flex items-center justify-between border-l-4 border-green-500 shadow-lg">
                         <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 bg-green-500/10 rounded-2xl flex items-center justify-center text-green-500"><i class="fas fa-link"></i></div>
+                            <div class="w-14 h-14 bg-green-500/10 rounded-2xl flex items-center justify-center text-green-500 text-xl"><i class="fas fa-bolt"></i></div>
                             <div>
-                                <h4 class="font-bold text-sm">ডাইরেক্ট লিঙ্ক টাস্ক</h4>
-                                <p class="text-[10px] text-slate-500">ভিজিট করে বোনাস নিন</p>
+                                <h4 class="font-bold text-base text-white">ডাইরেক্ট লিঙ্ক টাস্ক</h4>
+                                <p class="text-[11px] text-slate-400">৫ সেকেন্ড ভিজিট করুন</p>
                             </div>
                         </div>
-                        <i class="fas fa-external-link-alt text-slate-700"></i>
+                        <i class="fas fa-external-link-alt text-green-500 text-2xl"></i>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- হিস্টোরি স্ক্রিন -->
+    <!-- হিস্টোরি -->
     <div id="history-screen" class="hidden animate-in">
         <header class="p-6 flex items-center gap-4 bg-slate-900/40 border-b border-white/5">
             <button onclick="toggleHistory()" class="text-xl p-2"><i class="fas fa-arrow-left"></i></button>
@@ -352,46 +374,46 @@
         <main class="p-6" id="history-list"></main>
     </div>
 
-    <!-- Bottom Nav -->
-    <nav class="fixed bottom-0 left-0 w-full glass border-t border-white/5 px-8 py-5 flex justify-between items-center rounded-t-[3rem] z-[100]">
+    <!-- Nav -->
+    <nav class="fixed bottom-0 left-0 w-full glass border-t border-white/5 px-8 py-5 flex justify-between items-center rounded-t-[3rem] z-[100] shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
         <button onclick="location.reload()" class="text-blue-500 flex flex-col items-center gap-1">
-            <i class="fas fa-home"></i><span class="text-[8px] font-bold uppercase">Home</span>
+            <i class="fas fa-house-chimney text-xl"></i><span class="text-[9px] font-bold uppercase">Home</span>
         </button>
         <button onclick="toggleHistory()" class="text-slate-500 flex flex-col items-center gap-1">
-            <i class="fas fa-history"></i><span class="text-[8px] font-bold uppercase">History</span>
+            <i class="fas fa-clock-rotate-left text-xl"></i><span class="text-[9px] font-bold uppercase">History</span>
         </button>
         <button onclick="openWithdrawModal()" class="text-slate-500 flex flex-col items-center gap-1">
-            <i class="fas fa-wallet"></i><span class="text-[8px] font-bold uppercase">Withdraw</span>
+            <i class="fas fa-wallet text-xl"></i><span class="text-[9px] font-bold uppercase">Cashout</span>
         </button>
-        <button onclick="logout()" class="text-red-500 flex flex-col items-center gap-1">
-            <i class="fas fa-sign-out-alt"></i><span class="text-[8px] font-bold uppercase">Exit</span>
+        <button onclick="logout()" class="text-red-500/70 flex flex-col items-center gap-1">
+            <i class="fas fa-power-off text-xl"></i><span class="text-[9px] font-bold uppercase">Logout</span>
         </button>
     </nav>
 
     <!-- উইথড্র মোডাল -->
-    <div id="withdraw-modal" class="fixed inset-0 bg-black/90 z-[3000] hidden flex items-center justify-center p-6 backdrop-blur-md">
+    <div id="withdraw-modal" class="fixed inset-0 bg-black/90 z-[3000] hidden flex items-center justify-center p-6 backdrop-blur-xl">
         <div class="glass p-8 rounded-[3rem] w-full max-w-sm border-t-4 border-blue-600 shadow-2xl">
-            <h3 class="text-xl font-bold mb-4 text-white text-center">টাকা উত্তোলন করুন</h3>
-            <div class="flex gap-2 mb-4">
-                <button onclick="selectMethod('Bkash')" id="btn-bkash" class="method-btn flex-1 glass py-3 rounded-2xl border border-white/10 text-xs font-bold transition">বিকাশ</button>
-                <button onclick="selectMethod('Nagad')" id="btn-nagad" class="method-btn flex-1 glass py-3 rounded-2xl border border-white/10 text-xs font-bold transition">নগদ</button>
+            <h3 class="text-2xl font-black mb-6 text-white text-center">উইথড্র রিকোয়েস্ট</h3>
+            <div class="flex gap-3 mb-5">
+                <button onclick="selectMethod('Bkash')" id="btn-bkash" class="method-btn flex-1 glass py-4 rounded-2xl border border-white/5 text-sm font-bold transition">বিকাশ</button>
+                <button onclick="selectMethod('Nagad')" id="btn-nagad" class="method-btn flex-1 glass py-4 rounded-2xl border border-white/5 text-sm font-bold transition">নগদ</button>
             </div>
-            <input type="number" id="withdraw-amount" placeholder="পরিমাণ (৳)" class="w-full bg-slate-800/50 border border-white/10 rounded-2xl p-4 mb-3 text-white outline-none focus:border-blue-500">
-            <input type="number" id="withdraw-number" placeholder="আপনার নম্বর" class="w-full bg-slate-800/50 border border-white/10 rounded-2xl p-4 mb-6 text-white outline-none focus:border-blue-500">
-            <div class="flex gap-3">
-                <button onclick="closeWithdrawModal()" class="flex-1 bg-slate-800 py-4 rounded-2xl font-bold">বাতিল</button>
-                <button onclick="submitWithdraw()" class="flex-1 btn-gradient py-4 rounded-2xl font-black shadow-lg">রিকোয়েস্ট দিন</button>
+            <input type="number" id="withdraw-amount" placeholder="পরিমাণ (৳)" class="w-full bg-slate-900 border border-white/10 rounded-2xl p-5 mb-3 text-white font-bold outline-none focus:border-blue-500">
+            <input type="number" id="withdraw-number" placeholder="আপনার নম্বর (১১ ডিজিট)" class="w-full bg-slate-900 border border-white/10 rounded-2xl p-5 mb-8 text-white font-bold outline-none focus:border-blue-500">
+            <div class="flex gap-4">
+                <button onclick="closeWithdrawModal()" class="flex-1 bg-slate-800 py-5 rounded-2xl font-bold">বাতিল</button>
+                <button onclick="submitWithdraw()" class="flex-1 btn-gradient py-5 rounded-2xl font-black shadow-xl">সাবমিট</button>
             </div>
         </div>
     </div>
 
-    <!-- সাধারণ মোডাল -->
-    <div id="modal" class="fixed inset-0 bg-black/90 z-[4000] hidden flex items-center justify-center p-6 backdrop-blur-md">
-        <div class="glass p-8 rounded-[3rem] w-full max-w-xs text-center border-t-4 border-blue-600 shadow-2xl">
-            <div id="modal-icon" class="text-5xl mb-4"></div>
-            <h3 id="modal-title" class="text-xl font-bold mb-2 text-white"></h3>
-            <p id="modal-text" class="text-sm text-slate-400 mb-8"></p>
-            <button onclick="closeModal()" class="w-full btn-gradient py-4 rounded-2xl font-black shadow-lg">বন্ধ করুন</button>
+    <!-- মোডাল -->
+    <div id="modal" class="fixed inset-0 bg-black/90 z-[4000] hidden flex items-center justify-center p-6 backdrop-blur-xl">
+        <div class="glass p-10 rounded-[3rem] w-full max-w-xs text-center border-t-4 border-blue-600 shadow-2xl">
+            <div id="modal-icon" class="text-6xl mb-6 scale-125"></div>
+            <h3 id="modal-title" class="text-2xl font-black mb-3 text-white"></h3>
+            <p id="modal-text" class="text-slate-400 mb-10 leading-relaxed"></p>
+            <button onclick="closeModal()" class="w-full btn-gradient py-5 rounded-2xl font-black shadow-xl tracking-wider">ঠিক আছে</button>
         </div>
     </div>
 
