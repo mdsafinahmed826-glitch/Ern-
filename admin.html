@@ -1,83 +1,62 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SAFIN | Admin Control</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
-    <style>
-        body { background: #020617; color: white; }
-        .card { background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255,255,255,0.1); }
-    </style>
-</head>
-<body class="p-6">
+<!-- এই কোডটি আপনার index.html এর <script> ট্যাগের ভেতরে একদম উপরে বা শেষে যোগ করুন -->
 
-    <div class="max-w-4xl mx-auto">
-        <header class="mb-10 flex justify-between items-center">
-            <h1 class="text-2xl font-black">MASTER<span class="text-sky-500">ADMIN</span></h1>
-            <span class="bg-emerald-500/20 text-emerald-500 px-3 py-1 rounded-full text-xs font-bold">Database: Connected</span>
-        </header>
+<script>
+// ১. অ্যাডমিন সেটিংস হ্যান্ডলার (Notice, Maintenance, Task Control)
+function syncWithAdminPanel() {
+    // নোটিশ বার তৈরি (যদি না থাকে)
+    if (!document.getElementById('global-notice-bar')) {
+        const nb = document.createElement('div');
+        nb.id = 'global-notice-bar';
+        nb.style = "position:fixed; top:0; left:0; width:100%; background:#2563eb; color:white; font-size:11px; padding:5px; z-index:9999; text-align:center; display:none;";
+        nb.innerHTML = `<marquee id="notice-text-scroll"></marquee>`;
+        document.body.prepend(nb);
+    }
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- User Stats -->
-            <div class="card p-6 rounded-3xl">
-                <h2 class="text-slate-400 text-xs font-bold uppercase mb-4">Total Users</h2>
-                <p id="total-users" class="text-4xl font-black">0</p>
-            </div>
+    // মেইনটেন্যান্স ওভারলে তৈরি
+    if (!document.getElementById('maint-screen')) {
+        const ms = document.createElement('div');
+        ms.id = 'maint-screen';
+        ms.style = "position:fixed; inset:0; background:#020617; z-index:10000; display:none; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px;";
+        ms.innerHTML = `<i class="fas fa-tools" style="font-size:50px; color:#2563eb; margin-bottom:20px;"></i>
+                        <h2 style="font-size:24px; font-weight:bold;">Maintenance Mode</h2>
+                        <p style="color:#94a3b8; margin-top:10px;">আমরা অ্যাপটি আপডেট করছি। কিছুক্ষণের মধ্যেই ফিরে আসব।</p>`;
+        document.body.appendChild(ms);
+    }
 
-            <!-- Global Settings -->
-            <div class="card p-6 rounded-3xl space-y-4">
-                <h2 class="text-slate-400 text-xs font-bold uppercase mb-4">Quick Actions</h2>
-                <button onclick="resetBalance()" class="w-full bg-red-500/10 text-red-500 border border-red-500/20 py-3 rounded-xl font-bold hover:bg-red-500 hover:text-white transition-all">
-                    Reset All User Balances
-                </button>
-                <button onclick="window.location.href='index.html'" class="w-full bg-sky-500/10 text-sky-500 border border-sky-500/20 py-3 rounded-xl font-bold">
-                    View Website
-                </button>
-            </div>
-        </div>
-    </div>
+    // ফায়ারবেস থেকে লাইভ ডেটা শোনা
+    db.collection('admin_settings').doc('global').onSnapshot(doc => {
+        if (doc.exists) {
+            const data = doc.data();
 
-    <script>
-        const firebaseConfig = {
-            apiKey: "", 
-            authDomain: "ern-93752.firebaseapp.com",
-            projectId: "ern-93752",
-            storageBucket: "ern-93752.firebasestorage.app",
-            messagingSenderId: "159583001756",
-            appId: "1:159583001756:web:c7c8380f88da94ba97e159"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const appId = 'safin-station-v4';
-
-        // simple check for admin
-        const adminId = "7635408986"; // User shared Admin ID
-
-        firebase.auth().onAuthStateChanged(user => {
-            if (user) {
-                // Total users count
-                db.collection('artifacts').doc(appId).collection('users').onSnapshot(snap => {
-                    document.getElementById('total-users').innerText = snap.size;
-                });
+            // ক. নোটিশ আপডেট
+            if (data.notice && data.notice.trim() !== "") {
+                document.getElementById('notice-text-scroll').innerText = data.notice;
+                document.getElementById('global-notice-bar').style.display = 'block';
+                document.body.style.paddingTop = '30px';
             } else {
-                firebase.auth().signInAnonymously();
+                document.getElementById('global-notice-bar').style.display = 'none';
+                document.body.style.paddingTop = '0';
             }
-        });
 
-        async function resetBalance() {
-            if(!confirm("Are you sure you want to reset all balances?")) return;
-            const snap = await db.collection('artifacts').doc(appId).collection('users').get();
-            snap.forEach(async doc => {
-                await db.collection('artifacts').doc(appId).collection('users').doc(doc.id).collection('profile').doc('data').update({
-                    balance: 0
-                });
-            });
-            alert("Balances Reset!");
+            // খ. মেইনটেন্যান্স মোড
+            document.getElementById('maint-screen').style.display = data.maintenance ? 'flex' : 'none';
+
+            // গ. কাজের অপশন অন/অফ (ধরা যাক আপনার বাটনের আইডি task-btn-1)
+            // আপনার index.html এ থাকা টাস্ক বাটনগুলোর আইডি এখানে মিলিয়ে নিন
+            if (data.tasks) {
+                const interstitialBtn = document.getElementById('task-btn-interstitial');
+                const popupBtn = document.getElementById('task-btn-popup');
+                
+                if(interstitialBtn) interstitialBtn.style.display = data.tasks.interstitial === false ? 'none' : 'flex';
+                if(popupBtn) popupBtn.style.display = data.tasks.popup === false ? 'none' : 'flex';
+            }
         }
-    </script>
-</body>
-</html>
+    });
+}
+
+// আপনার Firebase App Initialize হওয়ার পর এই ফাংশনটি কল করুন
+// উদাহরণ: 
+// firebase.initializeApp(firebaseConfig);
+// const db = firebase.firestore();
+// syncWithAdminPanel(); 
+</script>
