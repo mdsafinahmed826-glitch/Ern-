@@ -1,62 +1,214 @@
-<!-- এই কোডটি আপনার index.html এর <script> ট্যাগের ভেতরে একদম উপরে বা শেষে যোগ করুন -->
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Admin - EarnPro & MiniApp</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
-<script>
-// ১. অ্যাডমিন সেটিংস হ্যান্ডলার (Notice, Maintenance, Task Control)
-function syncWithAdminPanel() {
-    // নোটিশ বার তৈরি (যদি না থাকে)
-    if (!document.getElementById('global-notice-bar')) {
-        const nb = document.createElement('div');
-        nb.id = 'global-notice-bar';
-        nb.style = "position:fixed; top:0; left:0; width:100%; background:#2563eb; color:white; font-size:11px; padding:5px; z-index:9999; text-align:center; display:none;";
-        nb.innerHTML = `<marquee id="notice-text-scroll"></marquee>`;
-        document.body.prepend(nb);
-    }
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap');
+        body { font-family: 'Hind Siliguri', sans-serif; background: #020617; color: #f1f5f9; }
+        .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
+        .tab-btn.active { background: #2563eb; color: white; border-color: #2563eb; }
+        .status-badge { padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; }
+    </style>
+</head>
+<body class="min-h-screen">
 
-    // মেইনটেন্যান্স ওভারলে তৈরি
-    if (!document.getElementById('maint-screen')) {
-        const ms = document.createElement('div');
-        ms.id = 'maint-screen';
-        ms.style = "position:fixed; inset:0; background:#020617; z-index:10000; display:none; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px;";
-        ms.innerHTML = `<i class="fas fa-tools" style="font-size:50px; color:#2563eb; margin-bottom:20px;"></i>
-                        <h2 style="font-size:24px; font-weight:bold;">Maintenance Mode</h2>
-                        <p style="color:#94a3b8; margin-top:10px;">আমরা অ্যাপটি আপডেট করছি। কিছুক্ষণের মধ্যেই ফিরে আসব।</p>`;
-        document.body.appendChild(ms);
-    }
+    <!-- Login Overlay -->
+    <div id="login-overlay" class="fixed inset-0 bg-slate-950 z-[1000] flex items-center justify-center p-6">
+        <div class="glass p-8 rounded-[2.5rem] w-full max-w-sm text-center border-t-4 border-blue-600 shadow-2xl">
+            <h2 class="text-2xl font-bold mb-6 text-blue-500">মাস্টার এক্সেস</h2>
+            <input id="admin-pass" type="password" placeholder="পাসওয়ার্ড দিন" class="w-full bg-slate-900 border border-slate-800 rounded-2xl p-5 mb-4 outline-none text-center font-bold text-white">
+            <button onclick="checkAccess()" class="w-full bg-blue-600 py-4 rounded-2xl font-bold shadow-lg">প্রবেশ করুন</button>
+        </div>
+    </div>
 
-    // ফায়ারবেস থেকে লাইভ ডেটা শোনা
-    db.collection('admin_settings').doc('global').onSnapshot(doc => {
-        if (doc.exists) {
-            const data = doc.data();
+    <!-- Main Content -->
+    <div id="admin-content" class="hidden min-h-screen">
+        <nav class="glass sticky top-0 z-50 border-b border-white/5 p-4">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <span class="text-xl font-black text-blue-500 uppercase">Master Admin</span>
+                <div class="flex gap-2 overflow-x-auto">
+                    <button onclick="switchTab('stats')" id="btn-stats" class="tab-btn active px-4 py-2 rounded-xl text-[10px] font-bold border border-white/10 shrink-0">ইউজার লিস্ট</button>
+                    <button onclick="switchTab('withdraws')" id="btn-withdraws" class="tab-btn px-4 py-2 rounded-xl text-[10px] font-bold border border-white/10 shrink-0">উইথড্র রিকোয়েস্ট</button>
+                    <button onclick="switchTab('settings')" id="btn-settings" class="tab-btn px-4 py-2 rounded-xl text-[10px] font-bold border border-white/10 shrink-0">সেটিংস</button>
+                </div>
+            </div>
+        </nav>
 
-            // ক. নোটিশ আপডেট
-            if (data.notice && data.notice.trim() !== "") {
-                document.getElementById('notice-text-scroll').innerText = data.notice;
-                document.getElementById('global-notice-bar').style.display = 'block';
-                document.body.style.paddingTop = '30px';
-            } else {
-                document.getElementById('global-notice-bar').style.display = 'none';
-                document.body.style.paddingTop = '0';
-            }
+        <main class="max-w-7xl mx-auto px-4 py-8">
+            
+            <!-- Statistics & User Table -->
+            <div id="tab-stats" class="space-y-6">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="glass p-6 rounded-3xl text-center"><p class="text-xs text-slate-500">মোট ইউজার</p><h2 id="total-users" class="text-3xl font-bold">0</h2></div>
+                    <div class="glass p-6 rounded-3xl text-center"><p class="text-xs text-slate-500">মোট ক্লিক</p><h2 id="total-clicks" class="text-3xl font-bold text-sky-500">0</h2></div>
+                    <div class="glass p-6 rounded-3xl text-center"><p class="text-xs text-slate-500">পেন্ডিং উইথড্র</p><h2 id="pending-withdraw-count" class="text-3xl font-bold text-yellow-500">0</h2></div>
+                </div>
 
-            // খ. মেইনটেন্যান্স মোড
-            document.getElementById('maint-screen').style.display = data.maintenance ? 'flex' : 'none';
+                <div class="glass rounded-[2rem] overflow-hidden">
+                    <div class="p-6 border-b border-white/5 flex justify-between items-center bg-white/5">
+                        <h3 class="font-bold">ইউজার এবং কাজের রিপোর্ট</h3>
+                        <div class="text-[10px] text-slate-500">Admin ID: 7635408986</div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="text-slate-500 font-bold uppercase text-[10px]">
+                                <tr>
+                                    <th class="p-6">ইউজার প্রোফাইল</th>
+                                    <th class="p-6 text-center">মোট কাজ (ক্লিক)</th>
+                                    <th class="p-6">ব্যালেন্স</th>
+                                    <th class="p-6">অ্যাকশন</th>
+                                </tr>
+                            </thead>
+                            <tbody id="user-table-body" class="divide-y divide-white/5"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
 
-            // গ. কাজের অপশন অন/অফ (ধরা যাক আপনার বাটনের আইডি task-btn-1)
-            // আপনার index.html এ থাকা টাস্ক বাটনগুলোর আইডি এখানে মিলিয়ে নিন
-            if (data.tasks) {
-                const interstitialBtn = document.getElementById('task-btn-interstitial');
-                const popupBtn = document.getElementById('task-btn-popup');
-                
-                if(interstitialBtn) interstitialBtn.style.display = data.tasks.interstitial === false ? 'none' : 'flex';
-                if(popupBtn) popupBtn.style.display = data.tasks.popup === false ? 'none' : 'flex';
+            <!-- Withdraw Management -->
+            <div id="tab-withdraws" class="hidden space-y-4">
+                <h3 class="text-xl font-bold mb-6">উইথড্র হিস্ট্রি ও পেমেন্ট</h3>
+                <div id="withdraw-list" class="grid gap-4">
+                    <!-- Dynamic Data -->
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="tab-settings" class="hidden space-y-6">
+                 <!-- (আগের দেওয়া সেটিংস কোড এখানে থাকবে) -->
+                 <p class="text-slate-500 text-center py-10">সেটিংস মডিউল সচল আছে।</p>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDJwBkkuTwCpnEB6-JD4axqms5OniGr9-s",
+            authDomain: "ern-93752.firebaseapp.com",
+            projectId: "ern-93752",
+            appId: "1:159583001756:web:c7c8380f88da94ba97e159"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const SECRET_KEY = "admin1234";
+
+        function checkAccess() {
+            if (document.getElementById('admin-pass').value === SECRET_KEY) {
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('admin-content').classList.remove('hidden');
+                loadDashboardData();
             }
         }
-    });
-}
 
-// আপনার Firebase App Initialize হওয়ার পর এই ফাংশনটি কল করুন
-// উদাহরণ: 
-// firebase.initializeApp(firebaseConfig);
-// const db = firebase.firestore();
-// syncWithAdminPanel(); 
-</script>
+        function switchTab(tab) {
+            ['stats', 'withdraws', 'settings'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab);
+                document.getElementById(`btn-${t}`).classList.toggle('active', t === tab);
+            });
+        }
+
+        function loadDashboardData() {
+            // ১. ইউজার ডাটা লোড
+            db.collection('users').onSnapshot(snap => {
+                const tbody = document.getElementById('user-table-body');
+                tbody.innerHTML = '';
+                let totalClicks = 0;
+                
+                snap.forEach(doc => {
+                    const u = doc.data();
+                    totalClicks += (u.clicks || 0);
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-white/5 transition";
+                    tr.innerHTML = `
+                        <td class="p-6">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 bg-blue-600/20 text-blue-500 rounded-full flex items-center justify-center font-bold text-xs">${(u.name || 'U')[0]}</div>
+                                <div>
+                                    <p class="font-bold text-white">${u.name || 'User'}</p>
+                                    <p class="text-[10px] text-slate-500 font-mono">${doc.id.substring(0,10)}...</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="p-6 text-center font-mono font-bold text-sky-400">${u.clicks || 0}</td>
+                        <td class="p-6 font-bold text-green-500">৳${(u.balance || 0).toFixed(2)}</td>
+                        <td class="p-6">
+                            <button onclick="editUser('${doc.id}', ${u.balance})" class="bg-white/5 hover:bg-blue-600 p-2 rounded-lg transition"><i class="fas fa-edit"></i></button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                document.getElementById('total-users').innerText = snap.size;
+                document.getElementById('total-clicks').innerText = totalClicks;
+            });
+
+            // ২. উইথড্র ডাটা লোড
+            db.collection('withdraws').orderBy('timestamp', 'desc').onSnapshot(snap => {
+                const list = document.getElementById('withdraw-list');
+                const pendingCountEl = document.getElementById('pending-withdraw-count');
+                list.innerHTML = '';
+                let pending = 0;
+
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    if(d.status === 'Pending') pending++;
+                    
+                    const card = document.createElement('div');
+                    card.className = `glass p-6 rounded-[2rem] border-l-4 flex flex-col md:flex-row justify-between items-center gap-4 ${d.status === 'Pending' ? 'border-yellow-500' : 'border-green-500'}`;
+                    card.innerHTML = `
+                        <div class="flex items-center gap-4 w-full">
+                            <div class="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-xl">
+                                ${d.method === 'Bkash' ? '🇧' : '🇳'}
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-lg">৳${d.amount} <span class="text-xs text-slate-500 font-normal">(${d.method})</span></h4>
+                                <p class="text-sm text-blue-400 font-mono">${d.number}</p>
+                                <p class="text-[10px] text-slate-500 mt-1">${new Date(d.timestamp?.toDate()).toLocaleString('bn-BD')}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 w-full md:w-auto">
+                            <span class="status-badge ${d.status === 'Pending' ? 'bg-yellow-500/20 text-yellow-500' : 'bg-green-500/20 text-green-500'}">
+                                ${d.status}
+                            </span>
+                            ${d.status === 'Pending' ? `
+                                <button onclick="approveWithdraw('${doc.id}')" class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-xl font-bold text-xs">Approve</button>
+                            ` : ''}
+                            <button onclick="deleteWithdraw('${doc.id}')" class="text-red-500 p-2"><i class="fas fa-trash"></i></button>
+                        </div>
+                    `;
+                    list.appendChild(card);
+                });
+                pendingCountEl.innerText = pending;
+                if(snap.empty) list.innerHTML = `<p class="text-center text-slate-500 py-20">কোনো উইথড্র রিকোয়েস্ট পাওয়া যায়নি।</p>`;
+            });
+        }
+
+        window.approveWithdraw = (id) => {
+            if(confirm("পেমেন্ট কি সম্পন্ন হয়েছে?")) {
+                db.collection('withdraws').doc(id).update({ status: 'Success' });
+            }
+        };
+
+        window.deleteWithdraw = (id) => {
+            if(confirm("এই রেকর্ডটি ডিলিট করতে চান?")) {
+                db.collection('withdraws').doc(id).delete();
+            }
+        };
+
+        window.editUser = (id, bal) => {
+            const newBal = prompt("ইউজারের নতুন ব্যালেন্স দিন:", bal);
+            if(newBal !== null) {
+                db.collection('users').doc(id).update({ balance: parseFloat(newBal) });
+            }
+        };
+    </script>
+</body>
+</html>
