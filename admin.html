@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAFIN | Admin Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+    <style>
+        body { background: #020617; color: white; }
+        .card { background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body class="p-6">
+
+    <div class="max-w-4xl mx-auto">
+        <header class="mb-10 flex justify-between items-center">
+            <h1 class="text-2xl font-black">MASTER<span class="text-sky-500">ADMIN</span></h1>
+            <span class="bg-emerald-500/20 text-emerald-500 px-3 py-1 rounded-full text-xs font-bold">Database: Connected</span>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- User Stats -->
+            <div class="card p-6 rounded-3xl">
+                <h2 class="text-slate-400 text-xs font-bold uppercase mb-4">Total Users</h2>
+                <p id="total-users" class="text-4xl font-black">0</p>
+            </div>
+
+            <!-- Global Settings -->
+            <div class="card p-6 rounded-3xl space-y-4">
+                <h2 class="text-slate-400 text-xs font-bold uppercase mb-4">Quick Actions</h2>
+                <button onclick="resetBalance()" class="w-full bg-red-500/10 text-red-500 border border-red-500/20 py-3 rounded-xl font-bold hover:bg-red-500 hover:text-white transition-all">
+                    Reset All User Balances
+                </button>
+                <button onclick="window.location.href='index.html'" class="w-full bg-sky-500/10 text-sky-500 border border-sky-500/20 py-3 rounded-xl font-bold">
+                    View Website
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "", 
+            authDomain: "ern-93752.firebaseapp.com",
+            projectId: "ern-93752",
+            storageBucket: "ern-93752.firebasestorage.app",
+            messagingSenderId: "159583001756",
+            appId: "1:159583001756:web:c7c8380f88da94ba97e159"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const appId = 'safin-station-v4';
+
+        // simple check for admin
+        const adminId = "7635408986"; // User shared Admin ID
+
+        firebase.auth().onAuthStateChanged(user => {
+            if (user) {
+                // Total users count
+                db.collection('artifacts').doc(appId).collection('users').onSnapshot(snap => {
+                    document.getElementById('total-users').innerText = snap.size;
+                });
+            } else {
+                firebase.auth().signInAnonymously();
+            }
+        });
+
+        async function resetBalance() {
+            if(!confirm("Are you sure you want to reset all balances?")) return;
+            const snap = await db.collection('artifacts').doc(appId).collection('users').get();
+            snap.forEach(async doc => {
+                await db.collection('artifacts').doc(appId).collection('users').doc(doc.id).collection('profile').doc('data').update({
+                    balance: 0
+                });
+            });
+            alert("Balances Reset!");
+        }
+    </script>
+</body>
+</html>
