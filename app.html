@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAFIN STATION | Mini App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Monetag SDK -->
+    <script src='//libtl.com/sdk.js' data-zone='10352096' data-sdk='show_10352096'></script>
+
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+    <style>
+        body { background: #020617; color: white; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        .glass { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .reward-card { transition: all 0.2s ease; border-left: 4px solid transparent; }
+        .reward-card:active { transform: scale(0.98); background: rgba(255, 255, 255, 0.05); }
+    </style>
+</head>
+<body class="p-5">
+
+    <header class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-xl font-black">MINI<span class="text-sky-500">APP</span></h1>
+            <p class="text-[10px] text-slate-500 font-mono" id="user-id-display">Loading...</p>
+        </div>
+        <div class="glass px-4 py-2 rounded-2xl flex items-center gap-2">
+            <i class="fas fa-coins text-yellow-500"></i>
+            <span id="user-balance" class="font-bold">0.00</span>
+        </div>
+    </header>
+
+    <!-- Ad Controls -->
+    <div class="space-y-4">
+        <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest px-2">Available Tasks</h2>
+        
+        <!-- Rewarded Interstitial -->
+        <div onclick="playInterstitial()" class="reward-card glass p-5 rounded-2xl flex justify-between items-center border-l-sky-500">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 bg-sky-500/20 text-sky-500 rounded-full flex items-center justify-center"><i class="fas fa-play"></i></div>
+                <div>
+                    <h3 class="font-bold text-sm">Interstitial Ad</h3>
+                    <p class="text-[10px] text-slate-400">Reward: ৳ 0.20</p>
+                </div>
+            </div>
+            <i class="fas fa-chevron-right text-slate-700"></i>
+        </div>
+
+        <!-- Rewarded Popup -->
+        <div onclick="playPopup()" class="reward-card glass p-5 rounded-2xl flex justify-between items-center border-l-purple-500">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 bg-purple-500/20 text-purple-500 rounded-full flex items-center justify-center"><i class="fas fa-gift"></i></div>
+                <div>
+                    <h3 class="font-bold text-sm">Popup Reward</h3>
+                    <p class="text-[10px] text-slate-400">Reward: ৳ 0.15</p>
+                </div>
+            </div>
+            <i class="fas fa-chevron-right text-slate-700"></i>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "", 
+            authDomain: "ern-93752.firebaseapp.com",
+            projectId: "ern-93752",
+            storageBucket: "ern-93752.firebasestorage.app",
+            messagingSenderId: "159583001756",
+            appId: "1:159583001756:web:c7c8380f88da94ba97e159"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const appId = 'safin-station-v4';
+
+        // 1. In-App Interstitial (Auto start)
+        window.onload = () => {
+            if (typeof show_10352096 !== 'undefined') {
+                show_10352096({
+                    type: 'inApp',
+                    inAppSettings: {
+                        frequency: 2,
+                        capping: 0.1,
+                        interval: 30,
+                        timeout: 5,
+                        everyPage: false
+                    }
+                });
+            }
+        };
+
+        // 2. Rewarded Interstitial Function
+        function playInterstitial() {
+            if (typeof show_10352096 !== 'undefined') {
+                show_10352096().then(() => {
+                    addReward(0.20, "Interstitial");
+                }).catch(e => console.error(e));
+            }
+        }
+
+        // 3. Rewarded Popup Function
+        function playPopup() {
+            if (typeof show_10352096 !== 'undefined') {
+                show_10352096('pop').then(() => {
+                    addReward(0.15, "Popup");
+                }).catch(e => console.error(e));
+            }
+        }
+
+        async function addReward(amount, type) {
+            const user = firebase.auth().currentUser;
+            if (user) {
+                await db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('profile').doc('data').update({
+                    balance: firebase.firestore.FieldValue.increment(amount)
+                });
+                alert(`${type} Reward Added!`);
+            }
+        }
+
+        firebase.auth().onAuthStateChanged(user => {
+            if (user) {
+                document.getElementById('user-id-display').innerText = user.uid;
+                db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('profile').doc('data').onSnapshot(doc => {
+                    if (doc.exists) document.getElementById('user-balance').innerText = (doc.data().balance || 0).toFixed(2);
+                });
+            } else {
+                firebase.auth().signInAnonymously();
+            }
+        });
+    </script>
+</body>
+</html>
