@@ -25,7 +25,7 @@
     <div id="login-overlay" class="fixed inset-0 bg-slate-950 z-[1000] flex items-center justify-center p-6">
         <div class="glass p-8 rounded-[2.5rem] w-full max-w-sm text-center border-t-4 border-blue-600 shadow-2xl">
             <h2 class="text-2xl font-bold mb-6 text-blue-500">মাস্টার এক্সেস</h2>
-            <input id="admin-pass" type="password" placeholder="পাসওয়ার্ড দিন" class="w-full bg-slate-900 border border-slate-800 rounded-2xl p-5 mb-4 outline-none text-center font-bold text-white">
+            <input id="admin-pass" type="password" placeholder="পাসওয়ার্ড দিন" class="w-full bg-slate-900 border border-slate-800 rounded-2xl p-5 mb-4 outline-none text-center font-bold text-white">
             <button onclick="checkAccess()" class="w-full bg-blue-600 py-4 rounded-2xl font-bold shadow-lg">প্রবেশ করুন</button>
         </div>
     </div>
@@ -37,8 +37,8 @@
                 <span class="text-xl font-black text-blue-500 uppercase">Master Admin</span>
                 <div class="flex gap-2 overflow-x-auto">
                     <button onclick="switchTab('stats')" id="btn-stats" class="tab-btn active px-4 py-2 rounded-xl text-[10px] font-bold border border-white/10 shrink-0">ইউজার লিস্ট</button>
-                    <button onclick="switchTab('withdraws')" id="btn-withdraws" class="tab-btn px-4 py-2 rounded-xl text-[10px] font-bold border border-white/10 shrink-0">উইথড্র রিকোয়েস্ট</button>
-                    <button onclick="switchTab('settings')" id="btn-settings" class="tab-btn px-4 py-2 rounded-xl text-[10px] font-bold border border-white/10 shrink-0">সেটিংস</button>
+                    <button onclick="switchTab('withdraws')" id="btn-withdraws" class="tab-btn px-4 py-2 rounded-xl text-[10px] font-bold border border-white/10 shrink-0">উইথড্র রিকোয়েস্ট</button>
+                    <button onclick="switchTab('settings')" id="btn-settings" class="tab-btn px-4 py-2 rounded-xl text-[10px] font-bold border border-white/10 shrink-0">সেটিংস ও নোটিশ</button>
                 </div>
             </div>
         </nav>
@@ -84,13 +84,37 @@
 
             <!-- Settings Tab -->
             <div id="tab-settings" class="hidden space-y-6">
-                 <!-- (আগের দেওয়া সেটিংস কোড এখানে থাকবে) -->
-                 <p class="text-slate-500 text-center py-10">সেটিংস মডিউল সচল আছে।</p>
+                <!-- Notice System Section -->
+                <div class="glass p-6 rounded-[2rem] space-y-6">
+                    <h3 class="text-xl font-bold text-white border-b border-white/5 pb-3"><i class="fas fa-bullhorn text-blue-500 mr-2"></i>গ্লোবাল নোটিশ বোর্ড</h3>
+                    
+                    <div>
+                        <label class="text-xs text-slate-400 font-bold uppercase tracking-wider block mb-2">লাইভ নোটিশ (যা মিনি অ্যাপ ও ওয়েবসাইটে দেখাবে)</label>
+                        <textarea id="admin-notice-input" rows="3" placeholder="সব ইউজারদের জন্য নোটিশ এখানে লিখুন..." class="w-full bg-slate-900 border border-slate-800 rounded-2xl p-5 outline-none font-bold text-white focus:border-blue-500 transition"></textarea>
+                    </div>
+                    
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button onclick="saveNotice()" class="flex-1 bg-blue-600 hover:bg-blue-700 py-4 rounded-2xl font-bold text-white shadow-lg transition flex items-center justify-center gap-2">
+                            <i class="fas fa-save"></i> নোটিশ আপডেট করুন
+                        </button>
+                        <button onclick="clearNotice()" class="flex-1 bg-slate-800 hover:bg-red-600/20 hover:text-red-500 border border-transparent hover:border-red-500/30 py-4 rounded-2xl font-bold text-slate-300 transition flex items-center justify-center gap-2">
+                            <i class="fas fa-eraser"></i> নোটিশ ডিলিট করুন
+                        </button>
+                    </div>
+                </div>
+
+                <div class="glass p-6 rounded-[2rem]">
+                    <p class="text-slate-500 text-center py-4">সেটিংস এবং নোটিশ মডিউল সম্পূর্ণ সচল।</p>
+                </div>
             </div>
         </main>
     </div>
 
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-14 left-1/2 -translate-x-1/2 px-8 py-4 rounded-full bg-blue-600 text-white font-black shadow-2xl hidden z-[100] text-sm transition-all duration-300"></div>
+
     <script>
+        // Your Original Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyDJwBkkuTwCpnEB6-JD4axqms5OniGr9-s",
             authDomain: "ern-93752.firebaseapp.com",
@@ -101,14 +125,19 @@
         const db = firebase.firestore();
         const SECRET_KEY = "admin1234";
 
+        // Check Admin Access
         function checkAccess() {
             if (document.getElementById('admin-pass').value === SECRET_KEY) {
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('admin-content').classList.remove('hidden');
                 loadDashboardData();
+                loadNoticeData(); // Load notice on entry
+            } else {
+                alert("ভুল পাসওয়ার্ড! আবার চেষ্টা করুন।");
             }
         }
 
+        // Tab Switcher
         function switchTab(tab) {
             ['stats', 'withdraws', 'settings'].forEach(t => {
                 document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab);
@@ -116,6 +145,7 @@
             });
         }
 
+        // Load Main Dashboard Data
         function loadDashboardData() {
             // ১. ইউজার ডাটা লোড
             db.collection('users').onSnapshot(snap => {
@@ -166,12 +196,12 @@
                     card.innerHTML = `
                         <div class="flex items-center gap-4 w-full">
                             <div class="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-xl">
-                                ${d.method === 'Bkash' ? '🇧' : '🇳'}
+                                ${d.method === 'Bkash' || d.method === 'bKash' ? '🇧' : '🇳'}
                             </div>
                             <div>
                                 <h4 class="font-bold text-lg">৳${d.amount} <span class="text-xs text-slate-500 font-normal">(${d.method})</span></h4>
                                 <p class="text-sm text-blue-400 font-mono">${d.number}</p>
-                                <p class="text-[10px] text-slate-500 mt-1">${new Date(d.timestamp?.toDate()).toLocaleString('bn-BD')}</p>
+                                <p class="text-[10px] text-slate-500 mt-1">${d.timestamp ? new Date(d.timestamp).toLocaleString('bn-BD') : 'তারিখ পাওয়া যায়নি'}</p>
                             </div>
                         </div>
                         <div class="flex items-center gap-3 w-full md:w-auto">
@@ -187,12 +217,46 @@
                     list.appendChild(card);
                 });
                 pendingCountEl.innerText = pending;
-                if(snap.empty) list.innerHTML = `<p class="text-center text-slate-500 py-20">কোনো উইথড্র রিকোয়েস্ট পাওয়া যায়নি।</p>`;
+                if(snap.empty) list.innerHTML = `<p class="text-center text-slate-500 py-20">কোনো উইথড্র রিকোয়েস্ট পাওয়া যায়নি।</p>`;
             });
         }
 
+        // --- New Notice Management Functions ---
+        function loadNoticeData() {
+            db.collection('admin_settings').doc('global').onSnapshot(doc => {
+                if (doc.exists && doc.data().notice) {
+                    document.getElementById('admin-notice-input').value = doc.data().notice;
+                } else {
+                    document.getElementById('admin-notice-input').value = "";
+                }
+            });
+        }
+
+        window.saveNotice = async () => {
+            const txt = document.getElementById('admin-notice-input').value;
+            try {
+                await db.collection('admin_settings').doc('global').set({ notice: txt }, { merge: true });
+                showToast("নোটিশ সফলভাবে আপডেট হয়েছে!");
+            } catch (err) {
+                showToast("ভুল হয়েছে! আবার চেষ্টা করুন।");
+            }
+        };
+
+        window.clearNotice = async () => {
+            if (confirm("আপনি কি নিশ্চিতভাবে নোটিশটি মুছে ফেলতে চান?")) {
+                try {
+                    await db.collection('admin_settings').doc('global').set({ notice: "" }, { merge: true });
+                    document.getElementById('admin-notice-input').value = "";
+                    showToast("নোটিশ মুছে ফেলা হয়েছে!");
+                } catch (err) {
+                    showToast("ভুল হয়েছে!");
+                }
+            }
+        };
+
+        // --- Original Actions ---
         window.approveWithdraw = (id) => {
-            if(confirm("পেমেন্ট কি সম্পন্ন হয়েছে?")) {
+            if(confirm("পেমেন্ট কি সম্পন্ন হয়েছে?")) {
                 db.collection('withdraws').doc(id).update({ status: 'Success' });
             }
         };
@@ -205,10 +269,17 @@
 
         window.editUser = (id, bal) => {
             const newBal = prompt("ইউজারের নতুন ব্যালেন্স দিন:", bal);
-            if(newBal !== null) {
+            if(newBal !== null && newBal !== "") {
                 db.collection('users').doc(id).update({ balance: parseFloat(newBal) });
             }
         };
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg; 
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 3000);
+        }
     </script>
 </body>
 </html>
