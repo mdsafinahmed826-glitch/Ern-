@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EarnPro Max - Admin Access Enabled</title>
+    <title>EarnPro Max - Complete Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     
@@ -17,83 +17,137 @@
         body { font-family: 'Hind Siliguri', sans-serif; background: #070b14; color: #f1f5f9; overflow-x: hidden; }
         .glass { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.08); }
         .card-gradient { background: linear-gradient(145deg, #1e293b, #0f172a); border: 1px solid rgba(59, 130, 246, 0.2); }
-        .vpn-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2rem; }
+        .nav-btn { transition: all 0.3s ease; }
+        .active-nav { color: #3b82f6; transform: scale(1.1); }
+        .vpn-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 1000; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2rem; }
     </style>
 </head>
-<body class="min-h-screen pb-24">
+<body class="min-h-screen pb-28">
 
     <!-- VPN Block Overlay -->
     <div id="vpn-blocker" class="vpn-overlay">
-        <i class="fas fa-user-shield text-6xl text-red-500 mb-6"></i>
-        <h1 class="text-3xl font-black mb-4 text-white">VPN সনাক্ত হয়েছে!</h1>
-        <p class="text-slate-400 mb-8">দয়া করে VPN বা Proxy বন্ধ করুন।</p>
-        <button onclick="window.location.reload()" class="bg-blue-600 px-10 py-4 rounded-full font-bold">আবার চেষ্টা করুন</button>
+        <i class="fas fa-shield-virus text-7xl text-red-600 mb-6"></i>
+        <h1 class="text-3xl font-black mb-4">VPN সনাক্ত হয়েছে!</h1>
+        <p class="text-slate-400 mb-8">নিরাপত্তার স্বার্থে VPN ব্যবহার নিষিদ্ধ। দয়া করে VPN বন্ধ করে অ্যাপটি আবার লোড করুন।</p>
+        <button onclick="window.location.reload()" class="bg-blue-600 px-12 py-4 rounded-full font-bold">পেজ রিফ্রেশ করুন</button>
     </div>
 
-    <!-- Auth View -->
+    <!-- Auth View (Login Screen) -->
     <div id="auth-view" class="hidden flex flex-col items-center justify-center min-h-screen p-8 text-center">
-        <h1 class="text-5xl font-black mb-4 tracking-tighter">Earn<span class="text-blue-500">Pro</span></h1>
-        <button onclick="googleLogin()" class="flex items-center gap-4 bg-white text-black px-12 py-5 rounded-[2rem] font-bold text-xl hover:scale-105 transition shadow-2xl">
-            লগইন করতে ক্লিক করুন
-        </button>
-    </div>
-
-    <!-- Admin Password Modal -->
-    <div id="admin-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-[200] hidden flex items-center justify-center p-6">
-        <div class="glass p-8 rounded-[2.5rem] w-full max-w-sm border border-blue-500/30 text-center">
-            <h3 class="text-xl font-bold mb-6 text-blue-400">অ্যাডমিন প্রবেশ</h3>
-            <input id="admin-pass-input" type="password" placeholder="পাসওয়ার্ড লিখুন" class="w-full bg-slate-800 border-none rounded-2xl p-5 mb-4 outline-none text-center font-bold tracking-widest text-white">
-            <div class="flex gap-3">
-                <button onclick="closeAdminModal()" class="flex-1 bg-slate-700 py-4 rounded-2xl font-bold">বাতিল</button>
-                <button onclick="verifyAdminPass()" class="flex-1 bg-blue-600 py-4 rounded-2xl font-bold">প্রবেশ</button>
-            </div>
+        <div class="mb-8">
+            <i class="fas fa-gem text-7xl text-blue-500 animate-pulse"></i>
         </div>
+        <h1 class="text-5xl font-black mb-2 tracking-tighter">Earn<span class="text-blue-500">Pro</span></h1>
+        <p class="text-slate-400 mb-10">সহজ কাজে প্রতিদিন ইনকাম করুন সরাসরি মোবাইলে।</p>
+        <button onclick="googleLogin()" class="flex items-center gap-4 bg-white text-black px-10 py-5 rounded-[2rem] font-bold text-lg hover:scale-105 transition shadow-2xl">
+            <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" class="w-7 h-7" alt="Google">
+            গুগল দিয়ে লগইন করুন
+        </button>
     </div>
 
     <!-- Main View -->
     <div id="main-view" class="hidden max-w-xl mx-auto px-4">
+        
+        <!-- Header -->
         <header class="flex justify-between items-center py-8">
             <div class="flex items-center gap-4">
-                <img id="user-photo" src="" class="w-12 h-12 rounded-xl border border-blue-500/30" alt="User">
+                <img id="user-photo" src="" class="w-12 h-12 rounded-2xl border-2 border-blue-500/30 shadow-lg" alt="User">
                 <div>
-                    <h2 id="user-name" class="font-bold text-lg text-blue-400">লোড হচ্ছে...</h2>
-                    <p id="user-display-id" class="text-[10px] text-slate-500 font-bold uppercase">ID: ...</p>
+                    <h2 id="user-name" class="font-bold text-lg leading-none text-blue-400">লোড হচ্ছে...</h2>
+                    <p id="user-display-id" class="text-[10px] text-slate-500 font-bold mt-1 uppercase tracking-tighter">ID: ...</p>
                 </div>
             </div>
-            <!-- Admin Button: Only visible to you -->
-            <button id="admin-btn" onclick="openAdminModal()" class="hidden bg-red-600/20 text-red-500 border border-red-500/50 px-4 py-2 rounded-xl font-bold text-xs animate-pulse">অ্যাডমিন প্যানেল</button>
+            <button id="admin-btn" onclick="window.location.href='admin.html'" class="hidden bg-red-600/20 text-red-500 border border-red-500/50 px-4 py-2 rounded-xl font-bold text-xs">অ্যাডমিন</button>
         </header>
 
-        <div id="tab-home" class="space-y-8">
-            <div class="card-gradient p-10 rounded-[3rem] text-center shadow-2xl">
-                <p class="text-xs text-slate-500 uppercase tracking-widest mb-2">ব্যালেন্স</p>
-                <h1 class="text-6xl font-black text-white">৳<span id="user-balance">0.00</span></h1>
+        <!-- Home Section -->
+        <div id="tab-home" class="space-y-8 animate-in fade-in duration-500">
+            <div class="card-gradient p-12 rounded-[3.5rem] relative overflow-hidden shadow-2xl text-center">
+                <p class="text-xs text-slate-500 uppercase tracking-widest mb-2 font-bold">ব্যালেন্স</p>
+                <h1 class="text-7xl font-black text-white tracking-tighter">৳<span id="user-balance">0.00</span></h1>
+                <div class="mt-8 pt-6 border-t border-white/5 flex justify-around">
+                    <div class="text-center">
+                        <p class="text-[10px] text-slate-500 font-bold">মোট ক্লিক</p>
+                        <p id="user-clicks" class="text-xl font-bold text-blue-400">0</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-[10px] text-slate-500 font-bold">স্ট্যাটাস</p>
+                        <p class="text-xs font-bold text-green-500">সক্রিয় ✅</p>
+                    </div>
+                </div>
             </div>
 
-            <div class="grid grid-cols-1 gap-4">
-                <h3 class="text-xl font-black px-2">টাস্ক লিস্ট</h3>
-                <button onclick="handleDirectLink('https://omg10.com/4/10927827', 0.05, 1)" class="w-full card-gradient p-6 rounded-[2rem] flex justify-between items-center hover:border-blue-500 transition">
-                    <span class="font-bold">টাস্ক ০১ (৳০.০৫)</span>
-                    <i class="fas fa-play text-blue-500"></i>
-                </button>
-                <button onclick="handleDirectLink('https://omg10.com/4/10353323', 0.05, 2)" class="w-full card-gradient p-6 rounded-[2rem] flex justify-between items-center hover:border-blue-500 transition">
-                    <span class="font-bold">টাস্ক ০২ (৳০.০৫)</span>
-                    <i class="fas fa-play text-indigo-500"></i>
-                </button>
-                <button onclick="handleDirectLink('https://omg10.com/4/10927819', 0.05, 3)" class="w-full card-gradient p-6 rounded-[2rem] flex justify-between items-center hover:border-blue-500 transition">
-                    <span class="font-bold">টাস্ক ০৩ (৳০.০৫)</span>
-                    <i class="fas fa-play text-purple-500"></i>
-                </button>
-                <button onclick="handleDirectLink('https://omg10.com/4/10927814', 0.05, 4)" class="w-full card-gradient p-6 rounded-[2rem] flex justify-between items-center hover:border-blue-500 transition">
-                    <span class="font-bold">টাস্ক ০৪ (৳০.০৫)</span>
-                    <i class="fas fa-play text-green-500"></i>
-                </button>
+            <div class="space-y-4">
+                <h3 class="text-xl font-black px-2">আজকের কাজ</h3>
+                <div class="grid grid-cols-1 gap-4">
+                    <!-- Tasks Buttons -->
+                    <button onclick="handleTask('https://omg10.com/4/10927827', 0.05, 1)" class="w-full card-gradient p-6 rounded-[2rem] flex justify-between items-center group hover:border-blue-500 transition">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 bg-blue-600/20 rounded-2xl flex items-center justify-center text-blue-500"><i class="fas fa-play"></i></div>
+                            <div class="text-left"><p class="font-bold">টাস্ক ০১</p><p class="text-xs text-slate-500">৳০.০৫ রিওয়ার্ড</p></div>
+                        </div>
+                        <i class="fas fa-chevron-right text-slate-700"></i>
+                    </button>
+                    <button onclick="handleTask('https://omg10.com/4/10353323', 0.05, 2)" class="w-full card-gradient p-6 rounded-[2rem] flex justify-between items-center group hover:border-blue-500 transition">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 bg-indigo-600/20 rounded-2xl flex items-center justify-center text-indigo-500"><i class="fas fa-play"></i></div>
+                            <div class="text-left"><p class="font-bold">টাস্ক ০২</p><p class="text-xs text-slate-500">৳০.০৫ রিওয়ার্ড</p></div>
+                        </div>
+                        <i class="fas fa-chevron-right text-slate-700"></i>
+                    </button>
+                    <button onclick="handleTask('https://omg10.com/4/10927819', 0.05, 3)" class="w-full card-gradient p-6 rounded-[2rem] flex justify-between items-center group hover:border-blue-500 transition">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 bg-purple-600/20 rounded-2xl flex items-center justify-center text-purple-500"><i class="fas fa-play"></i></div>
+                            <div class="text-left"><p class="font-bold">টাস্ক ০৩</p><p class="text-xs text-slate-500">৳০.০৫ রিওয়ার্ড</p></div>
+                        </div>
+                        <i class="fas fa-chevron-right text-slate-700"></i>
+                    </button>
+                    <button onclick="handleTask('https://omg10.com/4/10927814', 0.05, 4)" class="w-full card-gradient p-6 rounded-[2rem] flex justify-between items-center group hover:border-blue-500 transition">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 bg-green-600/20 rounded-2xl flex items-center justify-center text-green-500"><i class="fas fa-play"></i></div>
+                            <div class="text-left"><p class="font-bold">টাস্ক ০৪</p><p class="text-xs text-slate-500">৳০.০৫ রিওয়ার্ড</p></div>
+                        </div>
+                        <i class="fas fa-chevron-right text-slate-700"></i>
+                    </button>
+                </div>
             </div>
         </div>
+
+        <!-- Withdraw Section -->
+        <div id="tab-withdraw" class="hidden space-y-6 pt-4 animate-in fade-in duration-500">
+            <h2 class="text-3xl font-black px-4">ক্যাশ আউট</h2>
+            <div class="glass p-8 rounded-[3rem] space-y-6">
+                <div class="space-y-4">
+                    <select id="method" class="w-full bg-slate-800 border-none rounded-2xl p-5 outline-none font-bold text-white">
+                        <option value="bKash">বিকাশ</option>
+                        <option value="Nagad">নগদ</option>
+                    </select>
+                    <input id="withdraw-amount" type="number" placeholder="টাকার পরিমাণ (মিনিমাম ১০০)" class="w-full bg-slate-800 border-none rounded-2xl p-5 outline-none font-bold text-white">
+                    <input id="pay-number" type="tel" placeholder="আপনার নম্বর" class="w-full bg-slate-800 border-none rounded-2xl p-5 outline-none font-bold text-white">
+                </div>
+                <button onclick="processWithdraw()" class="w-full bg-blue-600 py-5 rounded-3xl font-black text-xl hover:bg-blue-500 transition shadow-lg">সাবমিট করুন</button>
+            </div>
+            
+            <div class="space-y-4 pb-10">
+                <h3 class="text-xl font-bold px-4">পেমেন্ট হিস্ট্রি</h3>
+                <div id="history-list" class="space-y-3">
+                    <!-- History rows will load here -->
+                    <p class="text-center text-slate-600 text-sm">কোন পেমেন্ট রেকর্ড নেই</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Bar -->
+        <div class="fixed bottom-8 left-1/2 -translate-x-1/2 w-[85%] max-w-md glass rounded-[2.5rem] p-3 flex justify-around shadow-2xl z-50 border border-white/10">
+            <button onclick="switchTab('home')" id="nav-home" class="nav-btn p-4 rounded-2xl active-nav"><i class="fas fa-home text-2xl"></i></button>
+            <button onclick="switchTab('withdraw')" id="nav-withdraw" class="nav-btn p-4 rounded-2xl text-slate-500"><i class="fas fa-wallet text-2xl"></i></button>
+            <button onclick="logout()" class="nav-btn p-4 rounded-2xl text-slate-500"><i class="fas fa-sign-out-alt text-2xl"></i></button>
+        </div>
+
     </div>
 
     <!-- Toast Notification -->
-    <div id="toast" class="fixed top-10 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full bg-blue-600 text-white font-bold hidden z-[300]"></div>
+    <div id="toast" class="fixed top-10 left-1/2 -translate-x-1/2 px-8 py-4 rounded-full bg-white text-black font-black shadow-2xl hidden z-[100] text-sm"></div>
 
     <script>
         const firebaseConfig = {
@@ -108,86 +162,142 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
-        
-        // আপনার ডিটেইলস
+
         const MY_ADMIN_ID = "7635408986"; 
-        const MY_ADMIN_EMAIL = "finalsafin@gmail.com";
-        const SECRET_PASS = "admin1234"; 
 
-        let isVPN = false;
-
-        async function checkVPN() {
+        // VPN Detection
+        async function detectVPN() {
             try {
                 const res = await fetch('https://ipapi.co/json/');
                 const data = await res.json();
-                if (data.proxy || data.org?.includes('VPN') || data.org?.includes('Cloudflare')) {
+                const vpnFlags = ['VPN', 'Proxy', 'Cloudflare', 'Data Center', 'DigitalOcean'];
+                if (data.proxy || vpnFlags.some(flag => data.org?.includes(flag))) {
                     document.getElementById('vpn-blocker').style.display = 'flex';
-                    isVPN = true;
+                    return true;
                 }
-            } catch (e) {}
+            } catch (e) { return false; }
+            return false;
         }
 
         auth.onAuthStateChanged(async (user) => {
-            await checkVPN();
+            const vpnActive = await detectVPN();
+            if (vpnActive) return;
+
             if (user) {
                 document.getElementById('auth-view').classList.add('hidden');
                 document.getElementById('main-view').classList.remove('hidden');
                 document.getElementById('user-name').innerText = user.displayName;
                 document.getElementById('user-photo').src = user.photoURL;
-                document.getElementById('user-display-id').innerText = "ID: " + user.uid.substring(0, 12);
+                document.getElementById('user-display-id').innerText = "ID: " + user.uid.substring(0, 15);
                 
-                // আপনার আইডি বা ইমেইল মিললে বাটন দেখাবে
-                if (user.uid === MY_ADMIN_ID || user.email === MY_ADMIN_EMAIL) {
+                if (user.uid === MY_ADMIN_ID) {
                     document.getElementById('admin-btn').classList.remove('hidden');
                 }
 
-                syncData(user.uid);
+                initUserData(user);
+                loadWithdrawHistory(user.uid);
             } else {
                 document.getElementById('auth-view').classList.remove('hidden');
                 document.getElementById('main-view').classList.add('hidden');
             }
         });
 
-        function syncData(uid) {
-            db.collection('users').doc(uid).onSnapshot(doc => {
+        async function initUserData(user) {
+            const userRef = db.collection('users').doc(user.uid);
+            userRef.onSnapshot(doc => {
                 if (doc.exists) {
-                    document.getElementById('user-balance').innerText = (doc.data().balance || 0).toFixed(2);
+                    const data = doc.data();
+                    document.getElementById('user-balance').innerText = (data.balance || 0).toFixed(2);
+                    document.getElementById('user-clicks').innerText = data.clicks || 0;
                 } else {
-                    db.collection('users').doc(uid).set({ balance: 0, clicks: 0, name: auth.currentUser.displayName });
+                    userRef.set({ name: user.displayName, email: user.email, balance: 0, clicks: 0 });
                 }
             });
         }
 
-        window.openAdminModal = () => document.getElementById('admin-modal').classList.remove('hidden');
-        window.closeAdminModal = () => document.getElementById('admin-modal').classList.add('hidden');
+        window.googleLogin = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+        window.logout = () => auth.signOut();
 
-        window.verifyAdminPass = () => {
-            const pass = document.getElementById('admin-pass-input').value;
-            if (pass === SECRET_PASS) {
-                window.location.href = 'admin.html';
-            } else {
-                showToast("ভুল পাসওয়ার্ড!");
-            }
+        window.switchTab = (tab) => {
+            const isHome = tab === 'home';
+            document.getElementById('tab-home').classList.toggle('hidden', !isHome);
+            document.getElementById('tab-withdraw').classList.toggle('hidden', isHome);
+            document.getElementById('nav-home').className = isHome ? 'nav-btn p-4 rounded-2xl active-nav' : 'nav-btn p-4 rounded-2xl text-slate-500';
+            document.getElementById('nav-withdraw').className = !isHome ? 'nav-btn p-4 rounded-2xl active-nav' : 'nav-btn p-4 rounded-2xl text-slate-500';
         };
 
-        window.googleLogin = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
-
-        window.handleDirectLink = async (url, amt, t) => {
-            if (isVPN) return showToast("VPN বন্ধ করুন!");
+        window.handleTask = async (url, amt, taskNo) => {
+            if (await detectVPN()) return;
             const userRef = db.collection('users').doc(auth.currentUser.uid);
-            await userRef.update({ balance: firebase.firestore.FieldValue.increment(amt) });
-            showToast(`টাস্ক ${t} সফল! ৳${amt} যোগ হয়েছে।`);
+            await userRef.update({
+                balance: firebase.firestore.FieldValue.increment(amt),
+                clicks: firebase.firestore.FieldValue.increment(1)
+            });
+            showToast(`টাস্ক ${taskNo} সফল! ৳${amt} যোগ হয়েছে।`);
             window.open(url, '_blank');
         };
 
-        function showToast(m) {
+        window.processWithdraw = async () => {
+            const amt = parseFloat(document.getElementById('withdraw-amount').value);
+            const num = document.getElementById('pay-number').value;
+            const method = document.getElementById('method').value;
+
+            if (amt < 100) return showToast("মিনিমাম ১০০ টাকা হতে হবে!");
+            if (!num || num.length < 11) return showToast("সঠিক মোবাইল নম্বর দিন!");
+
+            const userRef = db.collection('users').doc(auth.currentUser.uid);
+            const doc = await userRef.get();
+            const currentBalance = doc.data().balance || 0;
+
+            if (currentBalance >= amt) {
+                await db.collection('withdraws').add({
+                    uid: auth.currentUser.uid,
+                    name: auth.currentUser.displayName,
+                    amount: amt,
+                    number: num,
+                    method: method,
+                    status: 'Pending',
+                    timestamp: Date.now()
+                });
+                await userRef.update({ balance: firebase.firestore.FieldValue.increment(-amt) });
+                showToast("উইথড্র রিকোয়েস্ট সফল হয়েছে!");
+                document.getElementById('withdraw-amount').value = '';
+                document.getElementById('pay-number').value = '';
+            } else {
+                showToast("পর্যাপ্ত ব্যালেন্স নেই!");
+            }
+        };
+
+        function loadWithdrawHistory(uid) {
+            db.collection('withdraws').where('uid', '==', uid).onSnapshot(snap => {
+                const list = document.getElementById('history-list');
+                if (snap.empty) return;
+                list.innerHTML = "";
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    const div = document.createElement('div');
+                    div.className = "glass p-5 rounded-2xl flex justify-between items-center border-l-4 " + 
+                                    (d.status === 'Pending' ? 'border-yellow-500' : 'border-green-500');
+                    div.innerHTML = `
+                        <div>
+                            <p class='font-bold text-sm'>৳${d.amount} - ${d.method}</p>
+                            <p class='text-[10px] text-slate-500'>${new Date(d.timestamp).toLocaleDateString()}</p>
+                        </div>
+                        <span class='text-[10px] font-bold uppercase ${d.status === 'Pending' ? 'text-yellow-500' : 'text-green-500'}'>${d.status}</span>
+                    `;
+                    list.appendChild(div);
+                });
+            });
+        }
+
+        function showToast(msg) {
             const t = document.getElementById('toast');
-            t.innerText = m;
+            t.innerText = msg;
             t.classList.remove('hidden');
             setTimeout(() => t.classList.add('hidden'), 3000);
         }
 
-        setInterval(checkVPN, 15000);
+        setInterval(detectVPN, 20000); // প্রতি ২০ সেকেন্ডে VPN চেক
     </script>
 </body>
 </html>
