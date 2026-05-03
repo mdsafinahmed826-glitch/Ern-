@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EarnPro Max - Premium Earning Experience</title>
+    <title>EarnPro Max - Direct Link Special</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     
@@ -11,174 +11,151 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    
-    <!-- Monetag SDK -->
-    <script src='//libtl.com/sdk.js' data-zone='10352096' data-sdk='show_10352096'></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap');
-        body { font-family: 'Hind Siliguri', sans-serif; background: #070b14; color: #f1f5f9; }
+        body { font-family: 'Hind Siliguri', sans-serif; background: #070b14; color: #f1f5f9; overflow-x: hidden; }
         .glass { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .card-gradient { background: linear-gradient(145deg, #1e293b, #0f172a); }
-        .tab-active { border-bottom: 3px solid #3b82f6; color: #3b82f6; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
+        .card-gradient { background: linear-gradient(145deg, #1e293b, #0f172a); border: 1px solid rgba(59, 130, 246, 0.2); }
+        .btn-glow { box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
+        .animate-bounce-slow { animation: bounce 3s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
     </style>
 </head>
 <body class="min-h-screen pb-24">
 
-    <!-- Auth Section -->
+    <!-- Auth View -->
     <div id="auth-view" class="hidden flex flex-col items-center justify-center min-h-screen p-8 text-center">
-        <div class="relative mb-10">
-            <div class="absolute inset-0 bg-blue-600 blur-3xl opacity-20 rounded-full"></div>
-            <div class="relative bg-slate-800 p-6 rounded-[2.5rem] shadow-2xl border border-white/5">
+        <div class="relative mb-8 animate-bounce-slow">
+            <div class="absolute inset-0 bg-blue-600 blur-3xl opacity-20"></div>
+            <div class="relative bg-slate-800 p-8 rounded-[3rem] border border-blue-500/20">
                 <i class="fas fa-gem text-6xl text-blue-500"></i>
             </div>
         </div>
-        <h1 class="text-5xl font-black mb-3">Earn<span class="text-blue-500">Pro</span> Max</h1>
-        <p class="text-slate-400 mb-10 max-w-xs leading-relaxed">সেরা সিপিএম রেট এবং ইনস্ট্যান্ট পেমেন্টের নিশ্চয়তা। কাজ শুরু করুন আজই!</p>
-        <button onclick="googleLogin()" class="flex items-center gap-4 bg-white text-black px-10 py-5 rounded-[2rem] font-bold text-lg hover:scale-105 active:scale-95 transition-all shadow-[0_20px_50px_rgba(59,130,246,0.3)]">
-            <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" class="w-6 h-6" alt="Google">
-            Google দিয়ে লগইন
+        <h1 class="text-5xl font-black mb-4 tracking-tighter">Earn<span class="text-blue-500">Pro</span></h1>
+        <p class="text-slate-400 mb-10 text-lg">প্রতি ক্লিকে ইনকাম করুন সরাসরি বিকাশে।</p>
+        <button onclick="googleLogin()" class="flex items-center gap-4 bg-white text-black px-12 py-5 rounded-[2rem] font-bold text-xl hover:scale-105 transition shadow-2xl">
+            <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" class="w-8 h-8" alt="Google">
+            Google লগইন
         </button>
     </div>
 
-    <!-- Main Content -->
-    <div id="main-view" class="hidden max-w-xl mx-auto px-4 space-y-6">
+    <!-- Main View -->
+    <div id="main-view" class="hidden max-w-xl mx-auto px-4">
         
-        <!-- Navbar -->
-        <nav class="flex justify-between items-center py-6">
-            <div class="flex items-center gap-3">
-                <div class="relative">
-                    <img id="user-photo" src="" class="w-12 h-12 rounded-2xl border-2 border-blue-500/30 object-cover" alt="Profile">
-                    <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-slate-900 rounded-full"></div>
-                </div>
+        <!-- Header -->
+        <header class="flex justify-between items-center py-8">
+            <div class="flex items-center gap-4">
+                <img id="user-photo" src="" class="w-14 h-14 rounded-2xl border-2 border-blue-500/50 shadow-lg" alt="User">
                 <div>
-                    <h2 id="user-name" class="font-bold text-lg leading-none truncate w-32">লোড হচ্ছে...</h2>
-                    <p class="text-[10px] text-blue-400 font-bold uppercase tracking-widest mt-1">লিডারবোর্ড: #<span id="rank-pos">--</span></p>
+                    <h2 id="user-name" class="font-bold text-xl leading-none truncate w-40">লোড হচ্ছে...</h2>
+                    <p class="text-xs text-blue-400 font-bold mt-1">ID: 7635408986</p>
                 </div>
             </div>
-            <div class="flex gap-2">
-                <button onclick="switchTab('history')" class="p-3 glass rounded-2xl text-slate-300 hover:text-white"><i class="fas fa-history"></i></button>
-                <button id="admin-btn" onclick="window.location.href='admin.html'" class="hidden bg-red-500 text-white text-xs px-4 py-3 rounded-2xl font-bold shadow-lg shadow-red-900/40">Admin</button>
-            </div>
-        </nav>
+            <button id="admin-btn" onclick="window.location.href='admin.html'" class="hidden bg-red-600/20 text-red-500 border border-red-500/50 px-4 py-2 rounded-xl font-bold text-xs">অ্যাডমিন</button>
+        </header>
 
-        <!-- Dynamic Tabs -->
-        <div id="tab-home" class="space-y-6 animate-in fade-in duration-500">
-            <!-- Balance Card -->
-            <div class="card-gradient p-10 rounded-[3rem] relative overflow-hidden border border-white/5 shadow-2xl">
-                <div class="absolute -top-10 -right-10 w-40 h-40 bg-blue-500/10 rounded-full blur-[80px]"></div>
-                <div class="flex justify-between items-start mb-6">
-                    <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Available Balance</span>
-                    <i class="fas fa-signal text-green-500 animate-pulse text-xs"></i>
-                </div>
-                <h1 class="text-6xl font-black tracking-tighter mb-4 text-white">$<span id="user-balance">0.0000</span></h1>
-                <div class="grid grid-cols-2 gap-4 pt-6 border-t border-white/5">
+        <!-- Home Tab -->
+        <div id="tab-home" class="space-y-8 animate-in fade-in duration-700">
+            <!-- Main Balance Display -->
+            <div class="card-gradient p-12 rounded-[3.5rem] relative overflow-hidden shadow-2xl text-center">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent"></div>
+                <p class="text-xs text-slate-500 uppercase tracking-[0.2em] mb-4 font-bold">Current Balance</p>
+                <h1 class="text-7xl font-black text-white tracking-tighter">$<span id="user-balance">0.0000</span></h1>
+                
+                <div class="grid grid-cols-2 gap-4 mt-10 pt-8 border-t border-white/5">
                     <div>
                         <p class="text-[10px] text-slate-500 uppercase font-bold">Total Clicks</p>
-                        <p id="user-clicks" class="text-lg font-bold text-blue-400">0</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-[10px] text-slate-500 uppercase font-bold">Today Earning</p>
-                        <p class="text-lg font-bold text-green-400">$<span id="today-earn">0.000</span></p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Task Grid -->
-            <div class="space-y-4">
-                <h3 class="px-2 font-bold text-slate-400 flex items-center gap-2"><i class="fas fa-rocket text-blue-500"></i> আর্নিং জোন</h3>
-                
-                <!-- Direct Link - Ultra Premium -->
-                <div class="bg-gradient-to-r from-blue-700 to-blue-500 p-1 rounded-[2.5rem] shadow-2xl shadow-blue-900/30">
-                    <div class="bg-slate-900 p-6 rounded-[2.4rem] flex items-center justify-between">
-                        <div class="flex items-center gap-4">
-                            <div class="w-14 h-14 bg-blue-600/10 rounded-2xl flex items-center justify-center text-blue-500 text-2xl">
-                                <i class="fas fa-link"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-lg">Direct Link</h4>
-                                <p class="text-[11px] text-slate-500">High CPM • instant reward</p>
-                            </div>
-                        </div>
-                        <a href="https://omg10.com/4/10927827" target="_blank" onclick="trackClick(0.0008)" class="bg-blue-600 text-white px-6 py-3 rounded-2xl font-bold hover:bg-blue-500 transition shadow-lg shadow-blue-900/40">ভিজিট</a>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <button onclick="watchAd('reward')" class="glass p-6 rounded-[2.5rem] text-left hover:bg-white/5 transition border border-white/5">
-                        <i class="fas fa-play-circle text-3xl text-orange-500 mb-4"></i>
-                        <h4 class="font-bold text-sm">Video Ad</h4>
-                        <p class="text-[10px] text-slate-500 mt-1">$0.0010 Per Ad</p>
-                    </button>
-                    <button onclick="watchAd('pop')" class="glass p-6 rounded-[2.5rem] text-left hover:bg-white/5 transition border border-white/5">
-                        <i class="fas fa-bolt text-3xl text-yellow-400 mb-4"></i>
-                        <h4 class="font-bold text-sm">Popup Ad</h4>
-                        <p class="text-[10px] text-slate-500 mt-1">$0.0005 Per Ad</p>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Withdraw Tab -->
-        <div id="tab-withdraw" class="hidden space-y-6 animate-in slide-in-from-bottom duration-500">
-            <h2 class="text-2xl font-bold px-2">ক্যাশ আউট</h2>
-            <div class="glass p-8 rounded-[3rem] space-y-6">
-                <div class="space-y-4">
-                    <div class="flex gap-3">
-                        <div class="flex-1">
-                            <label class="text-[10px] uppercase font-bold text-slate-500 ml-2 mb-2 block">মেথড</label>
-                            <select id="method" class="w-full bg-slate-800/50 border border-white/5 rounded-2xl p-4 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                                <option value="bkash">বিকাশ</option>
-                                <option value="nagad">নগদ</option>
-                                <option value="rocket">রকেট</option>
-                            </select>
-                        </div>
-                        <div class="flex-1">
-                            <label class="text-[10px] uppercase font-bold text-slate-500 ml-2 mb-2 block">পরিমাণ ($)</label>
-                            <input id="withdraw-amount" type="number" placeholder="1.00" class="w-full bg-slate-800/50 border border-white/5 rounded-2xl p-4 text-sm outline-none focus:ring-2 focus:ring-blue-500">
-                        </div>
+                        <p id="user-clicks" class="text-2xl font-bold text-blue-400">0</p>
                     </div>
                     <div>
-                        <label class="text-[10px] uppercase font-bold text-slate-500 ml-2 mb-2 block">নম্বর</label>
-                        <input id="pay-number" type="tel" placeholder="017xxxxxxxx" class="w-full bg-slate-800/50 border border-white/5 rounded-2xl p-4 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                        <p class="text-[10px] text-slate-500 uppercase font-bold">Status</p>
+                        <p class="text-sm font-bold text-green-500"><i class="fas fa-check-circle mr-1"></i> Active</p>
                     </div>
                 </div>
-                <button onclick="handleWithdraw()" class="w-full bg-green-600 py-5 rounded-3xl font-black text-lg hover:bg-green-500 transition shadow-xl shadow-green-900/20">উইথড্র রিকোয়েস্ট পাঠান</button>
-                <p class="text-[10px] text-center text-slate-500 italic uppercase tracking-widest">মিনিমাম পেমেন্ট $১.০০</p>
+            </div>
+
+            <!-- Single Premium Task Button -->
+            <div class="space-y-4">
+                <h3 class="font-bold text-slate-400 ml-4 flex items-center gap-2">
+                    <span class="w-2 h-2 bg-blue-500 rounded-full animate-ping"></span>
+                    মেইন টাস্ক
+                </h3>
+                
+                <div class="bg-gradient-to-br from-blue-600 to-indigo-700 p-1 rounded-[3rem] shadow-2xl transform hover:scale-[1.02] transition-transform duration-300">
+                    <div class="bg-slate-900 p-8 rounded-[2.9rem] flex flex-col items-center text-center">
+                        <div class="w-20 h-20 bg-blue-600/10 rounded-3xl flex items-center justify-center text-blue-500 text-4xl mb-6 border border-blue-500/20">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <h4 class="text-2xl font-black mb-2">Direct Link Work</h4>
+                        <p class="text-sm text-slate-400 mb-8 max-w-[200px]">লিঙ্ক ভিজিট করুন এবং ১০ সেকেন্ড অপেক্ষা করুন রিওয়ার্ড পেতে।</p>
+                        
+                        <button onclick="handleDirectLink('https://omg10.com/4/10927827', 0.0008)" 
+                                class="w-full bg-blue-600 text-white py-5 rounded-[2rem] font-black text-xl btn-glow hover:bg-blue-500 transition">
+                            কাজ শুরু করুন ($0.0008)
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Info -->
+            <div class="glass p-6 rounded-3xl border border-white/5 flex items-center gap-4">
+                <i class="fas fa-info-circle text-blue-500 text-xl"></i>
+                <p class="text-xs text-slate-400 leading-relaxed">ব্যালেন্স যোগ না হলে পেজটি একবার রিফ্রেশ করুন। সবসময় ভিপিএন (USA/UK) ব্যবহার করার চেষ্টা করুন ভালো সি-পি-এম এর জন্য।</p>
             </div>
         </div>
 
-        <!-- History Tab -->
-        <div id="tab-history" class="hidden space-y-4 animate-in slide-in-from-right duration-500">
-            <div class="flex justify-between items-center px-2">
-                <h2 class="text-2xl font-bold">পেমেন্ট হিস্টোরি</h2>
-                <button onclick="switchTab('home')" class="text-blue-500 text-sm font-bold">ফিরে যান</button>
+        <!-- Withdraw & History Tab -->
+        <div id="tab-withdraw" class="hidden space-y-6 pt-4 animate-in slide-in-from-bottom duration-500">
+            <h2 class="text-3xl font-black px-4">ক্যাশ আউট</h2>
+            
+            <div class="glass p-8 rounded-[3rem] space-y-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2">
+                        <label class="text-[10px] uppercase font-bold text-slate-500 ml-4 mb-2 block">পেমেন্ট মেথড</label>
+                        <select id="method" class="w-full bg-slate-800 border-none rounded-2xl p-5 outline-none font-bold">
+                            <option value="bkash">বিকাশ (bKash)</option>
+                            <option value="nagad">নগদ (Nagad)</option>
+                            <option value="rocket">রকেট (Rocket)</option>
+                        </select>
+                    </div>
+                    <div class="col-span-1">
+                        <label class="text-[10px] uppercase font-bold text-slate-500 ml-4 mb-2 block">পরিমাণ ($)</label>
+                        <input id="withdraw-amount" type="number" placeholder="1.00" class="w-full bg-slate-800 border-none rounded-2xl p-5 outline-none font-bold">
+                    </div>
+                    <div class="col-span-1">
+                        <label class="text-[10px] uppercase font-bold text-slate-500 ml-4 mb-2 block">নম্বর</label>
+                        <input id="pay-number" type="tel" placeholder="017..." class="w-full bg-slate-800 border-none rounded-2xl p-5 outline-none font-bold">
+                    </div>
+                </div>
+                <button onclick="handleWithdraw()" class="w-full bg-green-600 py-5 rounded-[2rem] font-black text-xl shadow-xl shadow-green-900/20 hover:bg-green-500 transition">পেমেন্ট রিকোয়েস্ট পাঠান</button>
+                <p class="text-center text-[10px] text-slate-500 font-bold tracking-widest uppercase">মিনিমাম উত্তোলন $১.০০</p>
             </div>
-            <div id="history-list" class="space-y-3 pb-10">
-                <!-- History Items -->
-                <div class="text-center py-20 opacity-30">
-                    <i class="fas fa-folder-open text-4xl mb-4"></i>
-                    <p>কোনো হিস্টোরি পাওয়া যায়নি</p>
+            
+            <h3 class="text-xl font-bold px-4 mt-10">পেমেন্ট হিস্টোরি</h3>
+            <div id="history-list" class="space-y-4 pb-12">
+                <!-- History Loaded Here -->
+                <div class="text-center py-10 opacity-20">
+                    <i class="fas fa-history text-4xl mb-2"></i>
+                    <p>লোড হচ্ছে...</p>
                 </div>
             </div>
         </div>
 
-        <!-- Bottom Navigation -->
-        <div class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md glass rounded-[2.5rem] p-3 flex justify-around items-center z-50 shadow-2xl">
-            <button onclick="switchTab('home')" id="btn-home" class="nav-btn p-4 rounded-2xl transition-all text-blue-500"><i class="fas fa-home text-xl"></i></button>
-            <button onclick="switchTab('withdraw')" id="btn-withdraw" class="nav-btn p-4 rounded-2xl transition-all text-slate-500"><i class="fas fa-wallet text-xl"></i></button>
-            <button onclick="logout()" class="nav-btn p-4 rounded-2xl transition-all text-slate-500"><i class="fas fa-sign-out-alt text-xl"></i></button>
+        <!-- Navigation -->
+        <div class="fixed bottom-8 left-1/2 -translate-x-1/2 w-[85%] max-w-md glass rounded-[2.5rem] p-3 flex justify-around shadow-2xl z-50 border border-white/10">
+            <button onclick="switchTab('home')" id="nav-home" class="p-4 rounded-2xl transition-all text-blue-500"><i class="fas fa-house text-2xl"></i></button>
+            <button onclick="switchTab('withdraw')" id="nav-withdraw" class="p-4 rounded-2xl transition-all text-slate-500"><i class="fas fa-wallet text-2xl"></i></button>
+            <button onclick="logout()" class="p-4 rounded-2xl transition-all text-slate-500"><i class="fas fa-power-off text-2xl"></i></button>
         </div>
 
     </div>
 
     <!-- Toast Notification -->
-    <div id="toast" class="fixed top-10 left-1/2 -translate-x-1/2 px-8 py-4 rounded-full bg-white text-black font-bold shadow-2xl hidden z-[100] animate-bounce text-sm"></div>
+    <div id="toast" class="fixed top-12 left-1/2 -translate-x-1/2 px-8 py-4 rounded-full bg-white text-black font-black shadow-2xl hidden z-[100] animate-bounce text-sm"></div>
 
     <script>
-        // Firebase Config
+        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDJwBkkuTwCpnEB6-JD4axqms5OniGr9-s",
             authDomain: "ern-93752.firebaseapp.com",
@@ -197,10 +174,10 @@
 
         let currentUser = null;
 
-        // Auth Logic
+        // Login Logic
         window.googleLogin = () => {
             const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).catch(e => showToast("Error: " + e.message));
+            auth.signInWithPopup(provider).catch(e => showToast("লগইন ব্যর্থ!"));
         };
 
         window.logout = () => auth.signOut();
@@ -215,135 +192,151 @@
                 
                 if (user.uid === ADMIN_ID) document.getElementById('admin-btn').classList.remove('hidden');
                 
-                syncUserData(user.uid);
-                loadHistory(user.uid);
-                initAds();
+                syncUserData();
+                loadHistory();
             } else {
                 document.getElementById('auth-view').classList.remove('hidden');
                 document.getElementById('main-view').classList.add('hidden');
             }
         });
 
-        // Data Sync
-        function syncUserData(uid) {
-            db.collection('users').doc(uid).onSnapshot(doc => {
+        // Database Sync
+        function syncUserData() {
+            db.collection('users').doc(currentUser.uid).onSnapshot(doc => {
                 if (doc.exists()) {
                     const data = doc.data();
-                    document.getElementById('user-balance').innerText = data.balance.toFixed(4);
+                    document.getElementById('user-balance').innerText = (data.balance || 0).toFixed(4);
                     document.getElementById('user-clicks').innerText = data.clicks || 0;
                 } else {
-                    db.collection('users').doc(uid).set({
-                        uid: uid,
+                    db.collection('users').doc(currentUser.uid).set({
+                        uid: currentUser.uid,
                         name: currentUser.displayName,
                         balance: 0,
                         clicks: 0,
-                        lastLogin: Date.now()
+                        lastActive: Date.now()
                     });
                 }
             });
         }
 
-        // History Loader
-        function loadHistory(uid) {
-            db.collection('withdraws').where('uid', '==', uid).onSnapshot(snap => {
-                const list = document.getElementById('history-list');
-                list.innerHTML = "";
-                if (snap.empty) {
-                    list.innerHTML = `<div class="text-center py-20 opacity-30"><i class="fas fa-folder-open text-4xl mb-4"></i><p>কোনো হিস্টোরি পাওয়া যায়নি</p></div>`;
-                    return;
-                }
-                snap.forEach(doc => {
-                    const data = doc.data();
-                    const statusColor = data.status === 'Paid' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400';
-                    const div = document.createElement('div');
-                    div.className = "glass p-5 rounded-3xl flex justify-between items-center";
-                    div.innerHTML = `
-                        <div>
-                            <p class="font-bold text-sm">${data.method.toUpperCase()} - $${data.amount}</p>
-                            <p class="text-[10px] text-slate-500">${new Date(data.time?.seconds * 1000).toLocaleDateString()}</p>
-                        </div>
-                        <span class="px-4 py-1 rounded-full text-[10px] font-bold ${statusColor}">${data.status}</span>
-                    `;
-                    list.prepend(div);
-                });
-            });
-        }
-
-        // Tab Switcher
-        window.switchTab = (tab) => {
-            const tabs = ['home', 'withdraw', 'history'];
-            tabs.forEach(t => document.getElementById('tab-' + t).classList.add('hidden'));
-            document.getElementById('tab-' + tab).classList.remove('hidden');
+        // --- IMPORTANT: DIRECT LINK HANDLER ---
+        window.handleDirectLink = async (url, amt) => {
+            if (!currentUser) return;
             
-            // Icon Color Reset
-            ['home', 'withdraw'].forEach(b => {
-                const btn = document.getElementById('btn-' + b);
-                if (btn) btn.classList.replace('text-blue-500', 'text-slate-500');
-            });
-            const activeBtn = document.getElementById('btn-' + tab);
-            if (activeBtn) activeBtn.classList.replace('text-slate-500', 'text-blue-500');
-        };
+            showToast("ব্যালেন্স যোগ হচ্ছে...");
+            
+            try {
+                // ১. আগে ডাটাবেজে ব্যালেন্স আপডেট করা হচ্ছে
+                const userRef = db.collection('users').doc(currentUser.uid);
+                await userRef.update({
+                    balance: firebase.firestore.FieldValue.increment(amt),
+                    clicks: firebase.firestore.FieldValue.increment(1),
+                    lastClick: Date.now()
+                });
 
-        // Ad Management
-        window.watchAd = (type) => {
-            if (typeof show_10352096 === 'function') {
-                const call = (type === 'pop') ? show_10352096('pop') : show_10352096();
-                call.then(() => {
-                    const rew = (type === 'pop') ? 0.0005 : 0.0010;
-                    updateBalance(rew);
-                    showToast("সাফল্য! রিওয়ার্ড যুক্ত হয়েছে।");
-                }).catch(() => showToast("Ad loading failed!"));
+                // ২. অল্প সময় অপেক্ষা যাতে ফায়ারবেজ সেভ সম্পন্ন হয়
+                setTimeout(() => {
+                    showToast("সাফল্য! লিঙ্ক ওপেন হচ্ছে।");
+                    window.open(url, '_blank');
+                }, 800);
+                
+            } catch (error) {
+                console.error("Balance Update Error:", error);
+                // যদি ডাটাবেজ আপডেট ব্যর্থ হয় তবুও লিঙ্ক ওপেন হবে (যাতে আপনার ইনকাম মিস না হয়)
+                window.open(url, '_blank');
             }
         };
 
-        window.trackClick = (amt) => updateBalance(amt);
+        // Payment History
+        function loadHistory() {
+            db.collection('withdraws').where('uid', '==', currentUser.uid).orderBy('time', 'desc').onSnapshot(snap => {
+                const list = document.getElementById('history-list');
+                list.innerHTML = "";
+                
+                if (snap.empty) {
+                    list.innerHTML = `<div class="text-center py-10 opacity-30"><p>কোনো হিস্টোরি নেই</p></div>`;
+                    return;
+                }
 
-        async function updateBalance(amt) {
-            if (!currentUser) return;
-            const ref = db.collection('users').doc(currentUser.uid);
-            await ref.update({
-                balance: firebase.firestore.FieldValue.increment(amt),
-                clicks: firebase.firestore.FieldValue.increment(1)
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const statusClass = data.status === 'Paid' ? 'text-green-500 bg-green-500/10' : 'text-yellow-500 bg-yellow-500/10';
+                    
+                    const div = document.createElement('div');
+                    div.className = "glass p-6 rounded-[2rem] flex justify-between items-center border border-white/5";
+                    div.innerHTML = `
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center text-blue-500">
+                                <i class="fas fa-wallet"></i>
+                            </div>
+                            <div>
+                                <p class="font-bold text-lg">$${data.amount.toFixed(2)}</p>
+                                <p class="text-[10px] text-slate-500 uppercase font-bold">${data.method}</p>
+                            </div>
+                        </div>
+                        <span class="px-4 py-2 rounded-xl text-[10px] font-black tracking-widest uppercase ${statusClass}">${data.status}</span>
+                    `;
+                    list.appendChild(div);
+                });
+            }, err => {
+                console.log("History Load Error:", err);
             });
         }
 
-        // Withdraw Request
+        // Withdraw Process
         window.handleWithdraw = async () => {
             const amt = parseFloat(document.getElementById('withdraw-amount').value);
             const num = document.getElementById('pay-number').value;
             const method = document.getElementById('method').value;
 
-            if (amt < 1) return showToast("মিনিমাম $১.০০ হতে হবে!");
-            if (!num) return showToast("নম্বর লিখুন!");
+            if (isNaN(amt) || amt < 1) return showToast("মিনিমাম $১.০০ দিন!");
+            if (!num || num.length < 11) return showToast("সঠিক নম্বর দিন!");
 
             const userRef = db.collection('users').doc(currentUser.uid);
-            const userSnap = await userRef.get();
-            const currentBal = userSnap.data().balance;
+            const userDoc = await userRef.get();
+            const balance = userDoc.data().balance;
 
-            if (currentBal >= amt) {
+            if (balance >= amt) {
                 await db.collection('withdraws').add({
                     uid: currentUser.uid,
+                    name: currentUser.displayName,
                     amount: amt,
                     number: num,
                     method: method,
                     status: 'Pending',
                     time: firebase.firestore.FieldValue.serverTimestamp()
                 });
+                
                 await userRef.update({ balance: firebase.firestore.FieldValue.increment(-amt) });
+                
                 showToast("রিকোয়েস্ট পাঠানো হয়েছে!");
                 document.getElementById('withdraw-amount').value = "";
                 document.getElementById('pay-number').value = "";
-                switchTab('history');
+                switchTab('withdraw');
             } else {
-                showToast("পর্যাপ্ত ব্যালেন্স নেই!");
+                showToast("ব্যালেন্স পর্যাপ্ত নয়!");
             }
         };
 
-        function initAds() {
-            if (typeof show_10352096 === 'function') {
-                show_10352096({ type: 'inApp', inAppSettings: { frequency: 2, interval: 30, timeout: 5 }});
+        // Navigation Switcher
+        window.switchTab = (tab) => {
+            const home = document.getElementById('tab-home');
+            const withdraw = document.getElementById('tab-withdraw');
+            const navHome = document.getElementById('nav-home');
+            const navWithdraw = document.getElementById('nav-withdraw');
+
+            if (tab === 'home') {
+                home.classList.remove('hidden');
+                withdraw.classList.add('hidden');
+                navHome.classList.replace('text-slate-500', 'text-blue-500');
+                navWithdraw.classList.replace('text-blue-500', 'text-slate-500');
+            } else {
+                home.classList.add('hidden');
+                withdraw.classList.remove('hidden');
+                navHome.classList.replace('text-blue-500', 'text-slate-500');
+                navWithdraw.classList.replace('text-slate-500', 'text-blue-500');
             }
-        }
+        };
 
         function showToast(msg) {
             const t = document.getElementById('toast');
