@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earn Money - Direct Link & Ads</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"></script>
+    <!-- Monetag SDK -->
+    <script src='//libtl.com/sdk.js' data-zone='10352096' data-sdk='show_10352096'></script>
+    <style>
+        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        body { background: #0f172a; color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .btn-glow:hover { box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div id="app" class="w-full max-w-md">
+        <!-- Auth View -->
+        <div id="auth-view" class="hidden text-center space-y-6">
+            <div class="bg-blue-600 w-20 h-20 rounded-3xl mx-auto flex items-center justify-center shadow-lg">
+                <span class="text-3xl font-bold">৳</span>
+            </div>
+            <h1 class="text-3xl font-bold">সহজ ইনকাম</h1>
+            <p class="text-slate-400">অ্যাড দেখে এবং লিঙ্ক ভিজিট করে ইনকাম শুরু করুন</p>
+            <button onclick="login()" class="w-full bg-blue-600 py-4 rounded-2xl font-bold text-lg btn-glow transition-all">শুরু করুন</button>
+        </div>
+
+        <!-- Main Dashboard -->
+        <div id="main-view" class="hidden space-y-4">
+            <!-- Header Area -->
+            <header class="glass p-5 rounded-3xl flex justify-between items-center">
+                <div>
+                    <p class="text-xs text-slate-400">আপনার ব্যালেন্স</p>
+                    <h2 class="text-2xl font-bold text-green-400">$<span id="user-balance">0.0000</span></h2>
+                </div>
+                <button id="admin-btn" onclick="showAdmin()" class="hidden bg-red-500/20 text-red-400 text-xs px-3 py-1 rounded-full border border-red-500/50">অ্যাডমিন</button>
+            </header>
+
+            <!-- Direct Link Highlight -->
+            <div class="bg-gradient-to-br from-blue-600 to-indigo-700 p-6 rounded-3xl shadow-xl">
+                <h3 class="text-lg font-bold mb-1">সরাসরি লিঙ্ক (Direct Link)</h3>
+                <p class="text-sm opacity-80 mb-4">নিচের লিঙ্কে ক্লিক করে ১০ সেকেন্ড অপেক্ষা করুন।</p>
+                <a href="https://omg10.com/4/10927827" target="_blank" onclick="trackDirectClick()" class="block w-full bg-white text-blue-700 text-center py-3 rounded-xl font-bold shadow-md hover:bg-slate-100 transition">
+                    ভিজিট করুন এবং ইনকাম করুন
+                </a>
+            </div>
+
+            <!-- Ad Units -->
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="watchRewarded()" class="glass p-4 rounded-2xl text-center hover:bg-white/10 transition">
+                    <div class="bg-indigo-500/20 w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-2 text-indigo-400">🎬</div>
+                    <p class="text-sm font-semibold">ভিডিও অ্যাড</p>
+                </button>
+                <button onclick="watchPopup()" class="glass p-4 rounded-2xl text-center hover:bg-white/10 transition">
+                    <div class="bg-purple-500/20 w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-2 text-purple-400">✨</div>
+                    <p class="text-sm font-semibold">পপআপ অ্যাড</p>
+                </button>
+            </div>
+
+            <!-- Withdraw Section -->
+            <div class="glass p-5 rounded-3xl space-y-3">
+                <h3 class="font-bold">উইথড্র (Withdraw)</h3>
+                <div class="flex gap-2">
+                    <input id="withdraw-amount" type="number" placeholder="পরিমাণ" class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    <button onclick="requestWithdraw()" class="bg-green-600 px-4 py-2 rounded-xl text-sm font-bold">রিকোয়েস্ট</button>
+                </div>
+                <p class="text-[10px] text-slate-500 text-center">* সর্বনিম্ন উইথড্র $১.০০ (বিকাশ/নগদ)</p>
+            </div>
+
+            <!-- Footer Info -->
+            <div class="text-center py-2">
+                <a href="https://github.com/finalsafin" target="_blank" class="text-xs text-slate-500 hover:text-blue-400">GitHub Repository</a>
+            </div>
+        </div>
+
+        <!-- Admin View -->
+        <div id="admin-view" class="hidden space-y-4">
+            <button onclick="showMain()" class="text-blue-400 text-sm">← ব্যাক টু ড্যাশবোর্ড</button>
+            <div class="glass p-5 rounded-3xl">
+                <h2 class="text-xl font-bold mb-4 text-red-400">অ্যাডমিন কন্ট্রোল</h2>
+                <div id="user-list" class="space-y-2 max-h-60 overflow-y-auto">
+                    <!-- User list loads here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast -->
+        <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-white text-black px-6 py-3 rounded-2xl font-semibold shadow-2xl hidden z-50"></div>
+    </div>
+
+    <script type="module">
+        // Firebase Config
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.getAuth(app);
+        const db = firebase.getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        let currentUser = null;
+        const ADMIN_ID = "7635408986"; // আপনার আইডি
+        let rewardAmount = 0.0005; // আপনার CPM অনুযায়ী সেট করা
+
+        async function init() {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await firebase.signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await firebase.signInAnonymously(auth);
+            }
+
+            firebase.onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    currentUser = user;
+                    document.getElementById('auth-view').classList.add('hidden');
+                    document.getElementById('main-view').classList.remove('hidden');
+                    
+                    if (user.uid === ADMIN_ID) {
+                        document.getElementById('admin-btn').classList.remove('hidden');
+                    }
+                    
+                    listenToData(user.uid);
+                    setupInAppAds();
+                } else {
+                    document.getElementById('auth-view').classList.remove('hidden');
+                }
+            });
+        }
+
+        function listenToData(uid) {
+            const docRef = firebase.doc(db, 'artifacts', appId, 'public', 'data', 'users', uid);
+            firebase.onSnapshot(docRef, (doc) => {
+                if (doc.exists()) {
+                    document.getElementById('user-balance').innerText = doc.data().balance.toFixed(4);
+                } else {
+                    firebase.setDoc(docRef, { balance: 0, uid: uid, clicks: 0 });
+                }
+            }, (err) => console.log("Error:", err));
+        }
+
+        // Monetag Ad Calls
+        window.watchRewarded = function() {
+            if (typeof show_10352096 === 'function') {
+                show_10352096().then(() => {
+                    updateBalance(rewardAmount);
+                    showToast("সাফল্য! রিওয়ার্ড যোগ হয়েছে।");
+                });
+            }
+        };
+
+        window.watchPopup = function() {
+            if (typeof show_10352096 === 'function') {
+                show_10352096('pop').then(() => {
+                    updateBalance(rewardAmount * 0.5);
+                    showToast("পপআপ রিওয়ার্ড যোগ হয়েছে।");
+                });
+            }
+        };
+
+        function setupInAppAds() {
+            if (typeof show_10352096 === 'function') {
+                show_10352096({
+                    type: 'inApp',
+                    inAppSettings: { frequency: 2, capping: 0.1, interval: 30, timeout: 5, everyPage: false }
+                });
+            }
+        }
+
+        window.trackDirectClick = function() {
+            // ডাইরেক্ট লিঙ্ক ক্লিকে ছোট একটি রিওয়ার্ড
+            updateBalance(0.0002);
+            showToast("লিঙ্ক ভিজিট করার জন্য ধন্যবাদ!");
+        };
+
+        async function updateBalance(amt) {
+            if (!currentUser) return;
+            const ref = firebase.doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+            const snap = await firebase.getDoc(ref);
+            const current = snap.exists() ? snap.data().balance : 0;
+            await firebase.updateDoc(ref, { balance: current + amt });
+        }
+
+        window.requestWithdraw = function() {
+            const val = document.getElementById('withdraw-amount').value;
+            if (val >= 1) {
+                showToast("উইথড্র রিকোয়েস্ট পাঠানো হয়েছে!");
+                document.getElementById('withdraw-amount').value = "";
+            } else {
+                showToast("মিনিমাম $১.০০ হতে হবে।");
+            }
+        };
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 3000);
+        }
+
+        // Admin Logics
+        window.showAdmin = async function() {
+            document.getElementById('main-view').classList.add('hidden');
+            document.getElementById('admin-view').classList.remove('hidden');
+            const col = firebase.collection(db, 'artifacts', appId, 'public', 'data', 'users');
+            const snap = await firebase.getDocs(col);
+            const list = document.getElementById('user-list');
+            list.innerHTML = "";
+            snap.forEach(d => {
+                const item = document.createElement('div');
+                item.className = "bg-white/5 p-3 rounded-xl flex justify-between items-center text-xs";
+                item.innerHTML = `<span>${d.id}</span> <span class="text-green-400">$${d.data().balance.toFixed(4)}</span>`;
+                list.appendChild(item);
+            });
+        };
+
+        window.showMain = () => {
+            document.getElementById('admin-view').classList.add('hidden');
+            document.getElementById('main-view').classList.remove('hidden');
+        };
+
+        window.login = () => init();
+        window.onload = init;
+    </script>
+</body>
+</html>
