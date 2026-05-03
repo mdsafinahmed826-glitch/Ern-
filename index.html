@@ -298,6 +298,37 @@
         }
 
         setInterval(detectVPN, 20000); // প্রতি ২০ সেকেন্ডে VPN চেক
-    </script>
+    <script>
+function startNoticeBoard() {
+    // ১. নোটিশ বারের HTML এবং CSS তৈরি
+    if (!document.getElementById('live-notice-bar')) {
+        const bar = document.createElement('div');
+        bar.id = 'live-notice-bar';
+        bar.style = "position: fixed; top: 0; left: 0; width: 100%; background: #2563eb; color: white; font-size: 12px; font-weight: bold; padding: 6px 0; z-index: 9999; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.3);";
+        bar.innerHTML = `<marquee id="live-notice-text" behavior="scroll" direction="left" scrollamount="6"></marquee>`;
+        document.body.prepend(bar);
+    }
+
+    // ২. ফায়ারবেস থেকে লাইভ ডাটা শোনা
+    db.collection('admin_settings').doc('global').onSnapshot(doc => {
+        if (doc.exists) {
+            const data = doc.data();
+            
+            // নোটিশ দেখানো বা লুকানোর লজিক
+            if (data.notice && data.notice.trim() !== "") {
+                document.getElementById('live-notice-text').innerText = data.notice;
+                document.getElementById('live-notice-bar').style.display = 'block';
+                document.body.style.paddingTop = "32px"; // নোটিশের জন্য স্ক্রিন সামান্য নিচে নামানো
+            } else {
+                document.getElementById('live-notice-bar').style.display = 'none';
+                document.body.style.paddingTop = "0px";
+            }
+        }
+    });
+}
+
+// Firebase Initialize হওয়ার ঠিক পরে এটি কল করুন
+// startNoticeBoard();
+</script>
 </body>
 </html>
