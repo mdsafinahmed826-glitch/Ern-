@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EarnPro Max - Direct Link Special</title>
+    <title>EarnPro Max - BDT Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     
@@ -20,6 +20,9 @@
         .btn-glow { box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
         .animate-bounce-slow { animation: bounce 3s infinite; }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        
+        .loader { width: 20px; height: 20px; border: 3px solid #FFF; border-bottom-color: transparent; border-radius: 50%; display: inline-block; animation: rotation 1s linear infinite; }
+        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="min-h-screen pb-24">
@@ -33,23 +36,22 @@
             </div>
         </div>
         <h1 class="text-5xl font-black mb-4 tracking-tighter">Earn<span class="text-blue-500">Pro</span></h1>
-        <p class="text-slate-400 mb-10 text-lg">প্রতি ক্লিকে ইনকাম করুন সরাসরি বিকাশে।</p>
+        <p class="text-slate-400 mb-10 text-lg">সরাসরি বিকাশ ও নগদে ইনকাম করুন।</p>
         <button onclick="googleLogin()" class="flex items-center gap-4 bg-white text-black px-12 py-5 rounded-[2rem] font-bold text-xl hover:scale-105 transition shadow-2xl">
             <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" class="w-8 h-8" alt="Google">
-            Google লগইন
+            Google দিয়ে শুরু করুন
         </button>
     </div>
 
     <!-- Main View -->
     <div id="main-view" class="hidden max-w-xl mx-auto px-4">
         
-        <!-- Header -->
         <header class="flex justify-between items-center py-8">
             <div class="flex items-center gap-4">
                 <img id="user-photo" src="" class="w-14 h-14 rounded-2xl border-2 border-blue-500/50 shadow-lg" alt="User">
                 <div>
                     <h2 id="user-name" class="font-bold text-xl leading-none truncate w-40">লোড হচ্ছে...</h2>
-                    <p class="text-xs text-blue-400 font-bold mt-1">ID: 7635408986</p>
+                    <p class="text-xs text-blue-400 font-bold mt-1">Status: Verified</p>
                 </div>
             </div>
             <button id="admin-btn" onclick="window.location.href='admin.html'" class="hidden bg-red-600/20 text-red-500 border border-red-500/50 px-4 py-2 rounded-xl font-bold text-xs">অ্যাডমিন</button>
@@ -57,89 +59,81 @@
 
         <!-- Home Tab -->
         <div id="tab-home" class="space-y-8 animate-in fade-in duration-700">
-            <!-- Main Balance Display -->
+            <!-- Balance Card in BDT -->
             <div class="card-gradient p-12 rounded-[3.5rem] relative overflow-hidden shadow-2xl text-center">
                 <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent"></div>
-                <p class="text-xs text-slate-500 uppercase tracking-[0.2em] mb-4 font-bold">Current Balance</p>
-                <h1 class="text-7xl font-black text-white tracking-tighter">$<span id="user-balance">0.0000</span></h1>
+                <p class="text-xs text-slate-500 uppercase tracking-[0.2em] mb-4 font-bold">বর্তমান ব্যালেন্স</p>
+                <h1 class="text-7xl font-black text-white tracking-tighter">৳<span id="user-balance">0.00</span></h1>
                 
                 <div class="grid grid-cols-2 gap-4 mt-10 pt-8 border-t border-white/5">
                     <div>
-                        <p class="text-[10px] text-slate-500 uppercase font-bold">Total Clicks</p>
+                        <p class="text-[10px] text-slate-500 uppercase font-bold">মোট কাজ</p>
                         <p id="user-clicks" class="text-2xl font-bold text-blue-400">0</p>
                     </div>
                     <div>
-                        <p class="text-[10px] text-slate-500 uppercase font-bold">Status</p>
-                        <p class="text-sm font-bold text-green-500"><i class="fas fa-check-circle mr-1"></i> Active</p>
+                        <p class="text-[10px] text-slate-500 uppercase font-bold">রেট (প্রতি ক্লিক)</p>
+                        <p class="text-sm font-bold text-green-500">৳০.০৫</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Single Premium Task Button -->
+            <!-- Single Task -->
             <div class="space-y-4">
                 <h3 class="font-bold text-slate-400 ml-4 flex items-center gap-2">
                     <span class="w-2 h-2 bg-blue-500 rounded-full animate-ping"></span>
-                    মেইন টাস্ক
+                    প্রধান কাজ
                 </h3>
                 
-                <div class="bg-gradient-to-br from-blue-600 to-indigo-700 p-1 rounded-[3rem] shadow-2xl transform hover:scale-[1.02] transition-transform duration-300">
+                <div class="bg-gradient-to-br from-blue-600 to-indigo-700 p-1 rounded-[3rem] shadow-2xl">
                     <div class="bg-slate-900 p-8 rounded-[2.9rem] flex flex-col items-center text-center">
                         <div class="w-20 h-20 bg-blue-600/10 rounded-3xl flex items-center justify-center text-blue-500 text-4xl mb-6 border border-blue-500/20">
-                            <i class="fas fa-bolt"></i>
+                            <i class="fas fa-link"></i>
                         </div>
-                        <h4 class="text-2xl font-black mb-2">Direct Link Work</h4>
-                        <p class="text-sm text-slate-400 mb-8 max-w-[200px]">লিঙ্ক ভিজিট করুন এবং ১০ সেকেন্ড অপেক্ষা করুন রিওয়ার্ড পেতে।</p>
+                        <h4 class="text-2xl font-black mb-2">ডাইরেক্ট লিঙ্ক ভিজিট</h4>
+                        <p class="text-sm text-slate-400 mb-8 max-w-[220px]">লিঙ্কটি ভিজিট করুন এবং ১০ সেকেন্ড অপেক্ষা করুন। ৫ পয়সা যোগ হবে।</p>
                         
-                        <button onclick="handleDirectLink('https://omg10.com/4/10927827', 0.0008)" 
-                                class="w-full bg-blue-600 text-white py-5 rounded-[2rem] font-black text-xl btn-glow hover:bg-blue-500 transition">
-                            কাজ শুরু করুন ($0.0008)
+                        <button id="task-btn" onclick="handleDirectLink('https://omg10.com/4/10927827', 0.05)" 
+                                class="w-full bg-blue-600 text-white py-5 rounded-[2rem] font-black text-xl btn-glow hover:bg-blue-500 transition flex items-center justify-center gap-3">
+                            <span>কাজ শুরু করুন</span>
                         </button>
                     </div>
                 </div>
             </div>
             
-            <!-- Quick Info -->
             <div class="glass p-6 rounded-3xl border border-white/5 flex items-center gap-4">
                 <i class="fas fa-info-circle text-blue-500 text-xl"></i>
-                <p class="text-xs text-slate-400 leading-relaxed">ব্যালেন্স যোগ না হলে পেজটি একবার রিফ্রেশ করুন। সবসময় ভিপিএন (USA/UK) ব্যবহার করার চেষ্টা করুন ভালো সি-পি-এম এর জন্য।</p>
+                <p class="text-xs text-slate-400 leading-relaxed">ভিপিএন (USA/UK) ব্যবহার করলে পেমেন্ট দ্রুত পাবেন।</p>
             </div>
         </div>
 
-        <!-- Withdraw & History Tab -->
-        <div id="tab-withdraw" class="hidden space-y-6 pt-4 animate-in slide-in-from-bottom duration-500">
-            <h2 class="text-3xl font-black px-4">ক্যাশ আউট</h2>
-            
+        <!-- Withdraw Tab -->
+        <div id="tab-withdraw" class="hidden space-y-6 pt-4">
+            <h2 class="text-3xl font-black px-4">টাকা উত্তোলন</h2>
             <div class="glass p-8 rounded-[3rem] space-y-6">
                 <div class="grid grid-cols-2 gap-4">
                     <div class="col-span-2">
                         <label class="text-[10px] uppercase font-bold text-slate-500 ml-4 mb-2 block">পেমেন্ট মেথড</label>
                         <select id="method" class="w-full bg-slate-800 border-none rounded-2xl p-5 outline-none font-bold">
-                            <option value="bkash">বিকাশ (bKash)</option>
-                            <option value="nagad">নগদ (Nagad)</option>
-                            <option value="rocket">রকেট (Rocket)</option>
+                            <option value="bKash">বিকাশ</option>
+                            <option value="Nagad">নগদ</option>
+                            <option value="Rocket">রকেট</option>
                         </select>
                     </div>
                     <div class="col-span-1">
-                        <label class="text-[10px] uppercase font-bold text-slate-500 ml-4 mb-2 block">পরিমাণ ($)</label>
-                        <input id="withdraw-amount" type="number" placeholder="1.00" class="w-full bg-slate-800 border-none rounded-2xl p-5 outline-none font-bold">
+                        <label class="text-[10px] uppercase font-bold text-slate-500 ml-4 mb-2 block">টাকার পরিমাণ (৳)</label>
+                        <input id="withdraw-amount" type="number" placeholder="100" class="w-full bg-slate-800 border-none rounded-2xl p-5 outline-none font-bold">
                     </div>
                     <div class="col-span-1">
-                        <label class="text-[10px] uppercase font-bold text-slate-500 ml-4 mb-2 block">নম্বর</label>
-                        <input id="pay-number" type="tel" placeholder="017..." class="w-full bg-slate-800 border-none rounded-2xl p-5 outline-none font-bold">
+                        <label class="text-[10px] uppercase font-bold text-slate-500 ml-4 mb-2 block">ফোন নম্বর</label>
+                        <input id="pay-number" type="tel" placeholder="01XXX..." class="w-full bg-slate-800 border-none rounded-2xl p-5 outline-none font-bold">
                     </div>
                 </div>
-                <button onclick="handleWithdraw()" class="w-full bg-green-600 py-5 rounded-[2rem] font-black text-xl shadow-xl shadow-green-900/20 hover:bg-green-500 transition">পেমেন্ট রিকোয়েস্ট পাঠান</button>
-                <p class="text-center text-[10px] text-slate-500 font-bold tracking-widest uppercase">মিনিমাম উত্তোলন $১.০০</p>
+                <button onclick="handleWithdraw()" class="w-full bg-green-600 py-5 rounded-[2rem] font-black text-xl shadow-xl hover:bg-green-500 transition">উত্তোলন রিকোয়েস্ট পাঠান</button>
+                <p class="text-center text-[10px] text-slate-500 font-bold uppercase tracking-widest">মিনিমাম উত্তোলন ১০০ টাকা</p>
             </div>
             
             <h3 class="text-xl font-bold px-4 mt-10">পেমেন্ট হিস্টোরি</h3>
-            <div id="history-list" class="space-y-4 pb-12">
-                <!-- History Loaded Here -->
-                <div class="text-center py-10 opacity-20">
-                    <i class="fas fa-history text-4xl mb-2"></i>
-                    <p>লোড হচ্ছে...</p>
-                </div>
-            </div>
+            <div id="history-list" class="space-y-4 pb-12"></div>
         </div>
 
         <!-- Navigation -->
@@ -151,11 +145,10 @@
 
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed top-12 left-1/2 -translate-x-1/2 px-8 py-4 rounded-full bg-white text-black font-black shadow-2xl hidden z-[100] animate-bounce text-sm"></div>
+    <!-- Toast -->
+    <div id="toast" class="fixed top-12 left-1/2 -translate-x-1/2 px-8 py-4 rounded-full bg-white text-black font-black shadow-2xl hidden z-[100] text-sm"></div>
 
     <script>
-        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyDJwBkkuTwCpnEB6-JD4axqms5OniGr9-s",
             authDomain: "ern-93752.firebaseapp.com",
@@ -174,14 +167,6 @@
 
         let currentUser = null;
 
-        // Login Logic
-        window.googleLogin = () => {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).catch(e => showToast("লগইন ব্যর্থ!"));
-        };
-
-        window.logout = () => auth.signOut();
-
         auth.onAuthStateChanged(user => {
             if (user) {
                 currentUser = user;
@@ -189,9 +174,7 @@
                 document.getElementById('main-view').classList.remove('hidden');
                 document.getElementById('user-name').innerText = user.displayName;
                 document.getElementById('user-photo').src = user.photoURL || 'https://via.placeholder.com/150';
-                
                 if (user.uid === ADMIN_ID) document.getElementById('admin-btn').classList.remove('hidden');
-                
                 syncUserData();
                 loadHistory();
             } else {
@@ -200,103 +183,69 @@
             }
         });
 
-        // Database Sync
+        window.googleLogin = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+        window.logout = () => auth.signOut();
+
         function syncUserData() {
             db.collection('users').doc(currentUser.uid).onSnapshot(doc => {
                 if (doc.exists()) {
                     const data = doc.data();
-                    document.getElementById('user-balance').innerText = (data.balance || 0).toFixed(4);
+                    document.getElementById('user-balance').innerText = (data.balance || 0).toFixed(2);
                     document.getElementById('user-clicks').innerText = data.clicks || 0;
                 } else {
                     db.collection('users').doc(currentUser.uid).set({
                         uid: currentUser.uid,
                         name: currentUser.displayName,
                         balance: 0,
-                        clicks: 0,
-                        lastActive: Date.now()
+                        clicks: 0
                     });
                 }
             });
         }
 
-        // --- IMPORTANT: DIRECT LINK HANDLER ---
+        // --- TASK HANDLER (BDT) ---
         window.handleDirectLink = async (url, amt) => {
             if (!currentUser) return;
+            const btn = document.getElementById('task-btn');
+            const originalContent = btn.innerHTML;
             
-            showToast("ব্যালেন্স যোগ হচ্ছে...");
-            
+            btn.innerHTML = `<span class="loader"></span> <span>প্রসেসিং...</span>`;
+            btn.disabled = true;
+
             try {
-                // ১. আগে ডাটাবেজে ব্যালেন্স আপডেট করা হচ্ছে
                 const userRef = db.collection('users').doc(currentUser.uid);
-                await userRef.update({
-                    balance: firebase.firestore.FieldValue.increment(amt),
-                    clicks: firebase.firestore.FieldValue.increment(1),
-                    lastClick: Date.now()
+                await db.runTransaction(async (transaction) => {
+                    const userDoc = await transaction.get(userRef);
+                    const newBalance = (userDoc.data().balance || 0) + amt;
+                    const newClicks = (userDoc.data().clicks || 0) + 1;
+                    transaction.update(userRef, { balance: newBalance, clicks: newClicks });
                 });
 
-                // ২. অল্প সময় অপেক্ষা যাতে ফায়ারবেজ সেভ সম্পন্ন হয়
+                showToast("৳০.০৫ যোগ হয়েছে!");
                 setTimeout(() => {
-                    showToast("সাফল্য! লিঙ্ক ওপেন হচ্ছে।");
+                    btn.innerHTML = originalContent;
+                    btn.disabled = false;
                     window.open(url, '_blank');
-                }, 800);
-                
-            } catch (error) {
-                console.error("Balance Update Error:", error);
-                // যদি ডাটাবেজ আপডেট ব্যর্থ হয় তবুও লিঙ্ক ওপেন হবে (যাতে আপনার ইনকাম মিস না হয়)
-                window.open(url, '_blank');
+                }, 1000);
+            } catch (e) {
+                showToast("আবার চেষ্টা করুন");
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
             }
         };
 
-        // Payment History
-        function loadHistory() {
-            db.collection('withdraws').where('uid', '==', currentUser.uid).orderBy('time', 'desc').onSnapshot(snap => {
-                const list = document.getElementById('history-list');
-                list.innerHTML = "";
-                
-                if (snap.empty) {
-                    list.innerHTML = `<div class="text-center py-10 opacity-30"><p>কোনো হিস্টোরি নেই</p></div>`;
-                    return;
-                }
-
-                snap.forEach(doc => {
-                    const data = doc.data();
-                    const statusClass = data.status === 'Paid' ? 'text-green-500 bg-green-500/10' : 'text-yellow-500 bg-yellow-500/10';
-                    
-                    const div = document.createElement('div');
-                    div.className = "glass p-6 rounded-[2rem] flex justify-between items-center border border-white/5";
-                    div.innerHTML = `
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center text-blue-500">
-                                <i class="fas fa-wallet"></i>
-                            </div>
-                            <div>
-                                <p class="font-bold text-lg">$${data.amount.toFixed(2)}</p>
-                                <p class="text-[10px] text-slate-500 uppercase font-bold">${data.method}</p>
-                            </div>
-                        </div>
-                        <span class="px-4 py-2 rounded-xl text-[10px] font-black tracking-widest uppercase ${statusClass}">${data.status}</span>
-                    `;
-                    list.appendChild(div);
-                });
-            }, err => {
-                console.log("History Load Error:", err);
-            });
-        }
-
-        // Withdraw Process
+        // --- WITHDRAW (BDT) ---
         window.handleWithdraw = async () => {
             const amt = parseFloat(document.getElementById('withdraw-amount').value);
             const num = document.getElementById('pay-number').value;
             const method = document.getElementById('method').value;
 
-            if (isNaN(amt) || amt < 1) return showToast("মিনিমাম $১.০০ দিন!");
-            if (!num || num.length < 11) return showToast("সঠিক নম্বর দিন!");
+            if (amt < 100) return showToast("মিনিমাম ১০০ টাকা!");
+            if (num.length < 11) return showToast("সঠিক নম্বর দিন!");
 
             const userRef = db.collection('users').doc(currentUser.uid);
-            const userDoc = await userRef.get();
-            const balance = userDoc.data().balance;
-
-            if (balance >= amt) {
+            const doc = await userRef.get();
+            if (doc.data().balance >= amt) {
                 await db.collection('withdraws').add({
                     uid: currentUser.uid,
                     name: currentUser.displayName,
@@ -304,38 +253,33 @@
                     number: num,
                     method: method,
                     status: 'Pending',
-                    time: firebase.firestore.FieldValue.serverTimestamp()
+                    time: Date.now()
                 });
-                
                 await userRef.update({ balance: firebase.firestore.FieldValue.increment(-amt) });
-                
-                showToast("রিকোয়েস্ট পাঠানো হয়েছে!");
-                document.getElementById('withdraw-amount').value = "";
-                document.getElementById('pay-number').value = "";
-                switchTab('withdraw');
-            } else {
-                showToast("ব্যালেন্স পর্যাপ্ত নয়!");
-            }
+                showToast("সফল হয়েছে!");
+            } else showToast("ব্যালেন্স পর্যাপ্ত নয়!");
         };
 
-        // Navigation Switcher
-        window.switchTab = (tab) => {
-            const home = document.getElementById('tab-home');
-            const withdraw = document.getElementById('tab-withdraw');
-            const navHome = document.getElementById('nav-home');
-            const navWithdraw = document.getElementById('nav-withdraw');
+        window.loadHistory = () => {
+            db.collection('withdraws').where('uid', '==', currentUser.uid).orderBy('time', 'desc').onSnapshot(snap => {
+                const list = document.getElementById('history-list');
+                list.innerHTML = "";
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    const div = document.createElement('div');
+                    div.className = "glass p-5 rounded-2xl flex justify-between items-center";
+                    div.innerHTML = `<div><p class='font-bold'>৳${d.amount}</p><p class='text-[10px]'>${d.method} - ${d.number}</p></div><span class='text-xs font-black ${d.status === 'Paid' ? 'text-green-500' : 'text-yellow-500'}'>${d.status}</span>`;
+                    list.appendChild(div);
+                });
+            });
+        };
 
-            if (tab === 'home') {
-                home.classList.remove('hidden');
-                withdraw.classList.add('hidden');
-                navHome.classList.replace('text-slate-500', 'text-blue-500');
-                navWithdraw.classList.replace('text-blue-500', 'text-slate-500');
-            } else {
-                home.classList.add('hidden');
-                withdraw.classList.remove('hidden');
-                navHome.classList.replace('text-blue-500', 'text-slate-500');
-                navWithdraw.classList.replace('text-slate-500', 'text-blue-500');
-            }
+        window.switchTab = (tab) => {
+            const isHome = tab === 'home';
+            document.getElementById('tab-home').classList.toggle('hidden', !isHome);
+            document.getElementById('tab-withdraw').classList.toggle('hidden', isHome);
+            document.getElementById('nav-home').classList.toggle('text-blue-500', isHome);
+            document.getElementById('nav-withdraw').classList.toggle('text-blue-500', !isHome);
         };
 
         function showToast(msg) {
