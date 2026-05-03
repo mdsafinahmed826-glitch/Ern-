@@ -30,7 +30,7 @@
 
         // Global state
         let userData = null;
-        let taskSettings = { task1: true, task2: true, task3: true };
+        let taskSettings = { mini_task1: true, mini_task2: true, mini_task3: true };
         const REWARD_AMOUNT = 0.07;
         let selectedPaymentMethod = "";
 
@@ -53,39 +53,41 @@
                 document.getElementById('user-name').innerText = user.displayName;
                 document.getElementById('user-id-display').innerText = "ID: " + user.uid.substring(0, 10).toUpperCase();
 
-                // ১. ইউজার প্রোফাইল লিসেনার
-                const userRef = doc(db, 'artifacts', 'ern-93752', 'users', user.uid, 'profile', 'data');
+                // ১. ইউজার প্রোফাইল লিসেনার (ওয়েবসাইটের পাথ অনুযায়ী)
+                const userRef = doc(db, 'users', user.uid);
                 onSnapshot(userRef, (snapshot) => {
                     if (snapshot.exists()) {
                         userData = snapshot.data();
                         document.getElementById('balance').innerText = (userData.balance || 0).toFixed(2);
                         document.getElementById('user-clicks').innerText = userData.clicks || 0;
                     } else {
-                        setDoc(userRef, { balance: 0, clicks: 0, name: user.displayName, email: user.email });
+                        setDoc(userRef, { balance: 0, clicks: 0, name: user.displayName, email: user.email, joined: serverTimestamp() });
                     }
                 });
 
-                // ২. অ্যাডমিন প্যানেল সিঙ্ক (Real-time Switches & Notice)
-                // আপনার অ্যাডমিন প্যানেল এই লোকেশনে ডাটা আপডেট করবে
-                const adminSettingsRef = doc(db, 'artifacts', 'ern-93752', 'public', 'settings', 'global');
-                onSnapshot(adminSettingsRef, (docSnap) => {
+                // ২. অ্যাডমিন সেটিংস সিঙ্ক (আপনার অ্যাডমিন প্যানেলের পাথ অনুযায়ী)
+                const taskSettingsRef = doc(db, 'admin_settings', 'tasks');
+                onSnapshot(taskSettingsRef, (docSnap) => {
                     if (docSnap.exists()) {
                         const data = docSnap.data();
                         
-                        // নোটিশ আপডেট
-                        if (data.notice) {
-                            document.getElementById('notice-text').innerText = "📢 " + data.notice;
-                            document.getElementById('mini-notice-bar').classList.remove('hidden');
-                        } else {
-                            document.getElementById('mini-notice-bar').classList.add('hidden');
-                        }
-
-                        // সুইচ লজিক (অ্যাডমিন প্যানেল থেকে টাস্ক অন/অফ)
-                        taskSettings.task1 = (data.task1 !== false);
-                        taskSettings.task2 = (data.task2 !== false);
-                        taskSettings.task3 = (data.task3 !== false);
+                        // সুইচ লজিক - অ্যাডমিন প্যানেলের আইডি ব্যবহার করা হয়েছে
+                        taskSettings.mini_task1 = (data.mini_task1 !== false);
+                        taskSettings.mini_task2 = (data.mini_task2 !== false);
+                        taskSettings.mini_task3 = (data.mini_task3 !== false);
 
                         updateTaskUI();
+                    }
+                });
+
+                // ৩. নোটিশ সিঙ্ক
+                const globalSettingsRef = doc(db, 'admin_settings', 'global');
+                onSnapshot(globalSettingsRef, (docSnap) => {
+                    if (docSnap.exists() && docSnap.data().notice) {
+                        document.getElementById('notice-text').innerText = "📢 " + docSnap.data().notice;
+                        document.getElementById('mini-notice-bar').classList.remove('hidden');
+                    } else {
+                        document.getElementById('mini-notice-bar').classList.add('hidden');
                     }
                 });
 
@@ -98,23 +100,25 @@
 
         function updateTaskUI() {
             const taskCards = [
-                { id: 'task-card-1', statusId: 'status-1', active: taskSettings.task1 },
-                { id: 'task-card-2', statusId: 'status-2', active: taskSettings.task2 },
-                { id: 'task-card-3', statusId: 'status-3', active: taskSettings.task3 }
+                { id: 'task-card-1', statusId: 'status-1', active: taskSettings.mini_task1 },
+                { id: 'task-card-2', statusId: 'status-2', active: taskSettings.mini_task2 },
+                { id: 'task-card-3', statusId: 'status-3', active: taskSettings.mini_task3 }
             ];
 
             taskCards.forEach(item => {
                 const el = document.getElementById(item.id);
                 const statusEl = document.getElementById(item.statusId);
-                if(el) {
+                if(el && statusEl) {
                     if(!item.active) {
                         el.classList.add('opacity-40', 'grayscale', 'pointer-events-none');
                         statusEl.innerText = "বর্তমানে বন্ধ আছে";
                         statusEl.classList.add('text-red-500');
+                        statusEl.classList.remove('text-green-500');
                     } else {
                         el.classList.remove('opacity-40', 'grayscale', 'pointer-events-none');
                         statusEl.innerText = "চলমান (৳০.০৭)";
                         statusEl.classList.remove('text-red-500');
+                        statusEl.classList.add('text-green-500');
                     }
                 }
             });
@@ -122,7 +126,7 @@
 
         // Tasks
         window.playInterstitialAd = () => {
-            if (!taskSettings.task1) return;
+            if (!taskSettings.mini_task1) return;
             if (typeof show_10352096 === 'function') {
                 show_10352096().then(() => giveReward("রিওয়ার্ড অ্যাড"))
                 .catch(() => showModal("ত্রুটি", "অ্যাড লোড হয়নি।", "❌"));
@@ -130,14 +134,14 @@
         };
 
         window.playPopupAd = () => {
-            if (!taskSettings.task2) return;
+            if (!taskSettings.mini_task2) return;
             if (typeof show_10352096 === 'function') {
                 show_10352096('pop').then(() => giveReward("পপ-আপ টাস্ক"));
             }
         };
 
         window.openDirectLink = () => {
-            if (!taskSettings.task3) return;
+            if (!taskSettings.mini_task3) return;
             window.open('https://omg10.com/4/10927827', '_blank');
             setTimeout(() => giveReward("ডাইরেক্ট লিঙ্ক"), 5000);
         };
@@ -145,7 +149,7 @@
         async function giveReward(taskName) {
             const user = auth.currentUser;
             if(!user) return;
-            const userRef = doc(db, 'artifacts', 'ern-93752', 'users', user.uid, 'profile', 'data');
+            const userRef = doc(db, 'users', user.uid);
             await updateDoc(userRef, {
                 balance: increment(REWARD_AMOUNT),
                 clicks: increment(1)
@@ -153,28 +157,14 @@
             showModal("সফল!", `${taskName} থেকে ৳${REWARD_AMOUNT} যোগ হয়েছে।`, "💰");
         }
 
-        // Withdraw & UI Helpers
-        window.openWithdrawModal = () => {
-            const balance = parseFloat(document.getElementById('balance').innerText);
-            if(balance < 50) return showModal("ব্যালেন্স কম", "উইথড্র করতে কমপক্ষে ৫০ টাকা প্রয়োজন।", "❌");
-            withdrawModal.classList.remove('hidden');
-        };
-
-        window.closeWithdrawModal = () => withdrawModal.classList.add('hidden');
-
-        window.selectMethod = (method) => {
-            selectedPaymentMethod = method;
-            document.querySelectorAll('.method-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(`btn-${method.toLowerCase()}`).classList.add('active');
-        };
-
+        // Withdraw Functions
         window.submitWithdraw = async () => {
             const amount = parseFloat(document.getElementById('withdraw-amount').value);
             const number = document.getElementById('withdraw-number').value;
             const balance = parseFloat(document.getElementById('balance').innerText);
 
             if(!selectedPaymentMethod || !amount || amount < 50 || amount > balance || number.length < 11) {
-                return alert("সব তথ্য সঠিকভাবে দিন।");
+                return showModal("সতর্কতা", "সব তথ্য সঠিকভাবে দিন।", "⚠️");
             }
 
             const withdrawData = {
@@ -187,30 +177,19 @@
                 timestamp: serverTimestamp()
             };
 
-            await addDoc(collection(db, 'artifacts', 'ern-93752', 'public', 'data', 'withdraws'), withdrawData);
-            const userRef = doc(db, 'artifacts', 'ern-93752', 'users', auth.currentUser.uid, 'profile', 'data');
+            // উইথড্র পাথও ওয়েবসাইটের মতো করা হয়েছে
+            await addDoc(collection(db, 'withdraws'), withdrawData);
+            const userRef = doc(db, 'users', auth.currentUser.uid);
             await updateDoc(userRef, { balance: increment(-amount) });
 
             closeWithdrawModal();
             showModal("সফল", "রিকোয়েস্ট পাঠানো হয়েছে। ২-২৪ ঘণ্টার মধ্যে পেমেন্ট পাবেন।", "✅");
         };
 
-        window.toggleHistory = () => {
-            const isHidden = historyScreen.classList.contains('hidden');
-            if(isHidden) {
-                appScreen.classList.add('hidden');
-                historyScreen.classList.remove('hidden');
-                loadHistory();
-            } else {
-                appScreen.classList.remove('hidden');
-                historyScreen.classList.add('hidden');
-            }
-        };
-
-        function loadHistory() {
+        window.loadHistory = () => {
             const historyList = document.getElementById('history-list');
             historyList.innerHTML = '<div class="text-center py-10 opacity-50">লোড হচ্ছে...</div>';
-            const q = collection(db, 'artifacts', 'ern-93752', 'public', 'data', 'withdraws');
+            const q = collection(db, 'withdraws');
             onSnapshot(q, (snapshot) => {
                 let html = "";
                 const docs = snapshot.docs
@@ -221,7 +200,7 @@
                     html = '<div class="text-center py-10 opacity-50">কোন হিস্টোরি নেই।</div>';
                 } else {
                     docs.forEach(data => {
-                        const statusColor = data.status === 'Paid' ? 'text-green-500' : 'text-yellow-500';
+                        const statusColor = data.status === 'Success' || data.status === 'Paid' ? 'text-green-500' : 'text-yellow-500';
                         html += `
                             <div class="glass p-4 rounded-2xl mb-3 flex justify-between items-center border-l-4 border-blue-500">
                                 <div>
@@ -235,8 +214,31 @@
                 }
                 historyList.innerHTML = html;
             });
-        }
+        };
 
+        // UI Helpers
+        window.openWithdrawModal = () => {
+            const balance = parseFloat(document.getElementById('balance').innerText);
+            if(balance < 50) return showModal("ব্যালেন্স কম", "উইথড্র করতে কমপক্ষে ৫০ টাকা প্রয়োজন।", "❌");
+            withdrawModal.classList.remove('hidden');
+        };
+        window.closeWithdrawModal = () => withdrawModal.classList.add('hidden');
+        window.selectMethod = (method) => {
+            selectedPaymentMethod = method;
+            document.querySelectorAll('.method-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`btn-${method.toLowerCase()}`).classList.add('active');
+        };
+        window.toggleHistory = () => {
+            const isHidden = historyScreen.classList.contains('hidden');
+            if(isHidden) {
+                appScreen.classList.add('hidden');
+                historyScreen.classList.remove('hidden');
+                loadHistory();
+            } else {
+                appScreen.classList.remove('hidden');
+                historyScreen.classList.add('hidden');
+            }
+        };
         window.showModal = (title, text, icon) => {
             document.getElementById('modal-title').innerText = title;
             document.getElementById('modal-text').innerText = text;
@@ -261,7 +263,6 @@
 </head>
 <body class="min-h-screen pb-24">
 
-    <!-- Notice Bar (Controlled by Admin) -->
     <div id="mini-notice-bar" class="bg-blue-600 text-white py-2 px-4 hidden sticky top-0 z-[1000] shadow-xl">
         <marquee id="notice-text" behavior="scroll" direction="left" scrollamount="6" class="text-xs font-bold"></marquee>
     </div>
@@ -281,7 +282,7 @@
         </button>
     </div>
 
-    <!-- Main Screen -->
+    <!-- App Screen -->
     <div id="app-screen" class="hidden">
         <header class="p-6 flex justify-between items-center border-b border-white/5">
             <div class="flex items-center gap-3">
@@ -359,7 +360,7 @@
         <main class="p-6" id="history-list"></main>
     </div>
 
-    <!-- Bottom Nav -->
+    <!-- Navigation -->
     <nav class="fixed bottom-0 left-0 w-full glass border-t border-white/5 px-8 py-5 flex justify-around items-center rounded-t-[3rem] z-[100]">
         <button onclick="location.reload()" class="text-blue-500 flex flex-col items-center gap-1"><i class="fas fa-house"></i><span class="text-[8px] font-bold uppercase">Home</span></button>
         <button onclick="toggleHistory()" class="text-slate-500 flex flex-col items-center gap-1"><i class="fas fa-history"></i><span class="text-[8px] font-bold uppercase">History</span></button>
