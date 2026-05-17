@@ -62,34 +62,50 @@
         const withdrawModal = document.getElementById('withdraw-modal');
         const mainModal = document.getElementById('modal');
 
-        // রিডাইরেক্ট হয়ে ফিরে আসার পর ইউজার ডেটা প্রসেস করার ব্যাকআপ হ্যান্ডলার
+        // রিডাইরেক্ট হয়ে ফিরে আসার পর ইউজার ডেটা প্রসেস করার ব্যাকআপ হ্যান্ডলার
         getRedirectResult(auth)
             .then((result) => {
                 if (result && result.user) {
                     console.log("Redirect login successful:", result.user);
+                    closeModal();
                 }
             })
             .catch((err) => {
                 console.error("Redirect Error caught:", err);
-                // সেশন স্টোরেজ ব্লকড থাকলে ইউজারকে সঠিক গাইডলাইন দেখানো হবে
-                if (err.code === "auth/web-storage-unsupported" || err.code === "auth/operation-not-supported-in-this-environment") {
-                    showModal("ব্রাউজার সমস্যা", "আপনার ব্রাউজারে থার্ড-পার্টি স্টোরেজ ব্লক করা আছে। সঠিক লগইন করতে ক্রোম (Chrome) বা ডিফল্ট ব্রাউজার ব্যবহার করুন।", "⚠️");
+                // সেশন স্টোরেজ ব্লকড থাকলে বা মিসিং ইনিশিয়াল স্টেট এরর আসলে ইউজারকে সঠিক গাইডলাইন দেখানো হবে
+                if (
+                    err.code === "auth/web-storage-unsupported" || 
+                    err.code === "auth/operation-not-supported-in-this-environment" ||
+                    err.message.includes("missing initial state")
+                ) {
+                    showModal(
+                        "লগইন ত্রুটি", 
+                        "টেলিগ্রাম বা ইন-অ্যাপ ব্রাউজার ব্লকের কারণে লগইন করা যাচ্ছে না। দয়া করে উপরে থ্রি-ডট (⋮) মেনুতে ক্লিক করে 'Open in Chrome' বা 'Default Browser' সিলেক্ট করুন।", 
+                        "❌"
+                    );
                 }
             });
 
-        // Auth Logic (Popup প্রথমে চেষ্টা করবে, পপআপ ব্লক থাকলে সরাসরি রিডাইরেক্ট করবে)
+        // Auth Logic (Popup প্রথমে চেষ্টা করবে, পপআপ ব্লক বা ব্যর্থ হলে রিডাইরেক্ট মোডে চেষ্টা করবে)
         window.signInWithGoogle = async () => {
             showModal("অপেক্ষা করুন", "গুগল সাইন-ইন প্রসেস করা হচ্ছে...", "⏳");
             try {
-                await signInWithPopup(auth, provider);
-                closeModal();
+                const result = await signInWithPopup(auth, provider);
+                if (result && result.user) {
+                    closeModal();
+                }
             } catch (popupErr) {
                 console.log("Popup blocked or failed, trying redirect mode...", popupErr);
                 try {
+                    // পপআপ ফেইল হলে সরাসরি রিডাইরেক্টেড সাইন-ইন ট্রিগার করবে
                     await signInWithRedirect(auth, provider);
                 } catch (redirectErr) {
                     console.error("Redirect error: ", redirectErr);
-                    showModal("লগইন ত্রুটি", "টেলিগ্রাম বা ইন-অ্যাপ ব্রাউজার ব্লকের কারণে লগইন করা যাচ্ছে না। দয়া করে থ্রি-ডট মেনুতে ক্লিক করে 'Open in Chrome' করুন।", "❌");
+                    showModal(
+                        "লগইন ত্রুটি", 
+                        "টেলিগ্রাম বা ইন-অ্যাপ ব্রাউজার ব্লকের কারণে লগইন করা যাচ্ছে না। দয়া করে উপরে থ্রি-ডট মেনুতে ক্লিক করে 'Open in Chrome' করুন।", 
+                        "❌"
+                    );
                 }
             }
         };
@@ -449,7 +465,7 @@
                     <i class="fas fa-users text-yellow-500"></i> রেফার ও আয় (২% লাইফটাইম কমিশন)
                 </h3>
                 <p class="text-xs text-slate-400 mb-4">
-                    আপনার বন্ধুদের রেফার কোডটি শেয়ার করুন। আপনার রেফার করা বন্ধুরা যখনই ক্যাশআউট করবে, তার ২% অর্থ সরাসরি কমিশন হিসেবে আপনার একাউন্ট ব্যালেন্সে অটোমেটিক যোগ হয়ে যাবে!
+                    আপনার বন্ধুদের রেফার কোডটি শেয়ার করুন। আপনার রেফার করা বন্ধুরা যখনই ক্যাশআউট করবে, তার ২% অর্থ সরাসরি কমিশন হিসেবে আপনার একاونট ব্যালেন্সে অটোমেটিক যোগ হয়ে যাবে!
                 </p>
                 
                 <!-- Share Code Area -->
@@ -484,7 +500,7 @@
                     <div class="flex items-center gap-4">
                         <div class="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500"><i class="fas fa-video"></i></div>
                         <div>
-                            <h4 class="font-bold text-sm">ভিডিও অ্যাড টাস্ক</h4>
+                            <h4 class="font-bold text-sm">ভি디오 অ্যাড টাস্ক</h4>
                             <p id="status-1" class="text-[10px] text-green-500 font-bold">চলমান (৳০.২৫)</p>
                         </div>
                     </div>
