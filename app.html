@@ -10,12 +10,27 @@
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        import { 
+            initializeAuth, 
+            indexedDBLocalPersistence, 
+            browserLocalPersistence,
+            signInWithPopup, 
+            signInWithRedirect, 
+            getRedirectResult, 
+            GoogleAuthProvider, 
+            onAuthStateChanged, 
+            signOut 
+        } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, onSnapshot, query, where, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+        // ডায়নামিক অথেনটিকেশন ডোমেইন সেটআপ (থার্ড পার্টি কুকি পলিসি ব্লক দূর করার জন্য)
+        const currentHost = window.location.hostname;
+        const isFirebaseHosting = currentHost.endsWith('web.app') || currentHost.endsWith('firebaseapp.com');
+        const finalAuthDomain = isFirebaseHosting ? currentHost : "ern-93752.firebaseapp.com";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDJwBkkuTwCpnEB6-JD4axqms5OniGr9-s",
-            authDomain: "ern-93752.firebaseapp.com",
+            authDomain: finalAuthDomain,
             databaseURL: "https://ern-93752-default-rtdb.firebaseio.com",
             projectId: "ern-93752",
             storageBucket: "ern-93752.firebasestorage.app",
@@ -24,7 +39,12 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
+        
+        // সেশন স্টোরেজ পার্টশনিং আটকাতে IndexedDB ও LocalPersistence যুক্ত করে Auth ইনিশিয়ালাইজেশন
+        const auth = initializeAuth(app, {
+            persistence: [indexedDBLocalPersistence, browserLocalPersistence]
+        });
+
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
@@ -42,8 +62,38 @@
         const withdrawModal = document.getElementById('withdraw-modal');
         const mainModal = document.getElementById('modal');
 
-        // Auth Logic
-        window.signInWithGoogle = () => signInWithPopup(auth, provider).catch(err => console.error(err));
+        // রিডাইরেক্ট হয়ে ফিরে আসার পর ইউজার ডেটা প্রসেস করার ব্যাকআপ হ্যান্ডলার
+        getRedirectResult(auth)
+            .then((result) => {
+                if (result && result.user) {
+                    console.log("Redirect login successful:", result.user);
+                }
+            })
+            .catch((err) => {
+                console.error("Redirect Error caught:", err);
+                // সেশন স্টোরেজ ব্লকড থাকলে ইউজারকে সঠিক গাইডলাইন দেখানো হবে
+                if (err.code === "auth/web-storage-unsupported" || err.code === "auth/operation-not-supported-in-this-environment") {
+                    showModal("ব্রাউজার সমস্যা", "আপনার ব্রাউজারে থার্ড-পার্টি স্টোরেজ ব্লক করা আছে। সঠিক লগইন করতে ক্রোম (Chrome) বা ডিফল্ট ব্রাউজার ব্যবহার করুন।", "⚠️");
+                }
+            });
+
+        // Auth Logic (Popup প্রথমে চেষ্টা করবে, পপআপ ব্লক থাকলে সরাসরি রিডাইরেক্ট করবে)
+        window.signInWithGoogle = async () => {
+            showModal("অপেক্ষা করুন", "গুগল সাইন-ইন প্রসেস করা হচ্ছে...", "⏳");
+            try {
+                await signInWithPopup(auth, provider);
+                closeModal();
+            } catch (popupErr) {
+                console.log("Popup blocked or failed, trying redirect mode...", popupErr);
+                try {
+                    await signInWithRedirect(auth, provider);
+                } catch (redirectErr) {
+                    console.error("Redirect error: ", redirectErr);
+                    showModal("লগইন ত্রুটি", "টেলিগ্রাম বা ইন-অ্যাপ ব্রাউজার ব্লকের কারণে লগইন করা যাচ্ছে না। দয়া করে থ্রি-ডট মেনুতে ক্লিক করে 'Open in Chrome' করুন।", "❌");
+                }
+            }
+        };
+
         window.logout = () => signOut(auth);
 
         onAuthStateChanged(auth, (user) => {
@@ -74,6 +124,8 @@
                     } else {
                         setDoc(userRef, { balance: 0, clicks: 0, name: user.displayName, email: user.email, joined: serverTimestamp() });
                     }
+                }, (error) => {
+                    console.error("User Snapshot Error: ", error);
                 });
 
                 // ২. অ্যাডমিন সেটিংস সিঙ্ক (আপনার অ্যাডমিন প্যানেলের পাথ অনুযায়ী)
@@ -89,6 +141,8 @@
 
                         updateTaskUI();
                     }
+                }, (error) => {
+                    console.error("Task Sync Error: ", error);
                 });
 
                 // ৩. নোটিশ সিঙ্ক
@@ -101,6 +155,8 @@
                     } else {
                         document.getElementById('mini-notice-bar').classList.add('hidden');
                     }
+                }, (error) => {
+                    console.error("Global Notice Sync Error: ", error);
                 });
 
             } else {
@@ -217,7 +273,7 @@
             tempInput.select();
             document.execCommand("copy");
             document.body.removeChild(tempInput);
-            showModal("কপি হয়েছে!", "আপনার রেফার কোড সফলভাবে কপি হয়েছে। আপনার বন্ধুদের আমন্ত্রণ জানান!", "📋");
+            showModal("কপি হয়েছে!", "আপনার রেফার কোড সফলভাবে কপি হয়েছে। আপনার বন্ধুদের আমন্ত্রণ জানান!", "📋");
         };
 
         window.submitReferralCode = async () => {
@@ -225,7 +281,7 @@
             if (!user) return;
             const codeInput = document.getElementById('referral-input').value.trim();
             if (!codeInput) {
-                return showModal("সতর্কতা", "দয়া করে একটি রেফার কোড প্রদান করুন।", "⚠️");
+                return showModal("সতর্কতা", "দয়া করে একটি রেফার কোড প্রদান করুন।", "⚠️");
             }
             if (codeInput === user.uid) {
                 return showModal("ত্রুটি", "আপনি নিজের কোড নিজে ব্যবহার করতে পারবেন না!", "❌");
@@ -241,7 +297,7 @@
                     
                     document.getElementById('refer-input-area').classList.add('hidden');
                     document.getElementById('referred-status-area').classList.remove('hidden');
-                    showModal("সফল!", "রেফার কোড সফলভাবে যুক্ত হয়েছে।", "✅");
+                    showModal("সফল!", "রেফার কোড সফলভাবে যুক্ত হয়েছে।", "✅");
                 } else {
                     showModal("ত্রুটি", "ভুল রেফার কোড! সঠিক কোড সাবমিট করুন।", "❌");
                 }
@@ -278,6 +334,8 @@
                     });
                 }
                 historyList.innerHTML = html;
+            }, (error) => {
+                console.error("History Snapshot Error: ", error);
             });
         };
 
@@ -335,7 +393,7 @@
 </head>
 <body class="min-h-screen pb-24">
 
-    <!-- dynamic Notice bar (ক্লিক করলে পপ-আপে সম্পূর্ণ বড় নোটিশ ওপেন হবে) -->
+    <!-- dynamic Notice bar (ক্লিক করলে পপ-আপে সম্পূর্ণ বড় নোটিশ ওপেন হবে) -->
     <div id="mini-notice-bar" onclick="showFullNotice()" class="bg-blue-600 hover:bg-blue-700 transition-colors text-white py-2 px-4 hidden sticky top-0 z-[1000] shadow-xl cursor-pointer">
         <marquee id="notice-text" behavior="scroll" direction="left" scrollamount="6" class="text-xs font-bold"></marquee>
     </div>
@@ -388,10 +446,10 @@
             <!-- Referral Card Section -->
             <div class="glass p-6 rounded-[2rem] mb-6 border-l-4 border-yellow-500 shadow-xl">
                 <h3 class="text-md font-bold text-white mb-2 flex items-center gap-2">
-                    <i class="fas fa-users text-yellow-500"></i> রেফার ও আয় (২% লাইফটাইম কমিশন)
+                    <i class="fas fa-users text-yellow-500"></i> রেফার ও আয় (২% লাইফটাইম কমিশন)
                 </h3>
                 <p class="text-xs text-slate-400 mb-4">
-                    আপনার বন্ধুদের রেফার কোডটি শেয়ার করুন। আপনার রেফার করা বন্ধুরা যখনই ক্যাশআউট করবে, তার ২% অর্থ সরাসরি কমিশন হিসেবে আপনার একাউন্ট ব্যালেন্সে অটোমেটিক যোগ হয়ে যাবে!
+                    আপনার বন্ধুদের রেফার কোডটি শেয়ার করুন। আপনার রেফার করা বন্ধুরা যখনই ক্যাশআউট করবে, তার ২% অর্থ সরাসরি কমিশন হিসেবে আপনার একাউন্ট ব্যালেন্সে অটোমেটিক যোগ হয়ে যাবে!
                 </p>
                 
                 <!-- Share Code Area -->
@@ -407,14 +465,14 @@
 
                 <!-- Submit Referral Code Area -->
                 <div id="refer-input-area">
-                    <p class="text-[11px] text-slate-400 mb-2">আপনি কি কোনো বন্ধুর মাধ্যমে আমন্ত্রিত হয়েছেন? কোডটি লিখুন:</p>
+                    <p class="text-[11px] text-slate-400 mb-2">আপনি কি কোনো বন্ধুর মাধ্যমে আমন্ত্রিত হয়েছেন? কোডটি লিখুন:</p>
                     <div class="flex gap-2">
                         <input type="text" id="referral-input" placeholder="বন্ধুর রেফার কোড দিন" class="flex-1 bg-slate-900/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none">
                         <button onclick="submitReferralCode()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition">সাবমিট</button>
                     </div>
                 </div>
                 <div id="referred-status-area" class="hidden text-xs text-green-500 font-bold flex items-center gap-1">
-                    <i class="fas fa-check-circle"></i> আপনি সফলভাবে আপনার বন্ধুর আমন্ত্রণে যুক্ত হয়েছেন!
+                    <i class="fas fa-check-circle"></i> আপনি সফলভাবে আপনার বন্ধুর আমন্ত্রণে যুক্ত হয়েছেন!
                 </div>
             </div>
 
