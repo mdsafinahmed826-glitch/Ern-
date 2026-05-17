@@ -31,8 +31,9 @@
         // Global state
         let userData = null;
         let taskSettings = { mini_task1: true, mini_task2: true, mini_task3: true };
-        const REWARD_AMOUNT = 0.07;
+        const REWARD_AMOUNT = 1.50; // $18 CPM অনুযায়ী রিওয়ার্ড ১.৫০ টাকা সেট করা হয়েছে
         let selectedPaymentMethod = "";
+        let currentGlobalNotice = ""; // নোটিশ স্টোর করার জন্য গ্লোবাল ভেরিয়েবল
 
         // Elements
         const loginScreen = document.getElementById('login-screen');
@@ -53,25 +54,35 @@
                 document.getElementById('user-name').innerText = user.displayName;
                 document.getElementById('user-id-display').innerText = "ID: " + user.uid.substring(0, 10).toUpperCase();
 
-                // ১. ইউজার প্রোফাইল লিসেনার (ওয়েবসাইটের পাথ অনুযায়ী)
+                // ১. ইউজার প্রোফাইল লিসেনার (ওয়েবসাইটের পাথ অনুযায়ী)
                 const userRef = doc(db, 'users', user.uid);
                 onSnapshot(userRef, (snapshot) => {
                     if (snapshot.exists()) {
                         userData = snapshot.data();
                         document.getElementById('balance').innerText = (userData.balance || 0).toFixed(2);
                         document.getElementById('user-clicks').innerText = userData.clicks || 0;
+                        
+                        // সেট রেফারেল ইনফরমেশন UI
+                        document.getElementById('my-refer-code').innerText = user.uid;
+                        if (userData.referredBy) {
+                            document.getElementById('refer-input-area').classList.add('hidden');
+                            document.getElementById('referred-status-area').classList.remove('hidden');
+                        } else {
+                            document.getElementById('refer-input-area').classList.remove('hidden');
+                            document.getElementById('referred-status-area').classList.add('hidden');
+                        }
                     } else {
                         setDoc(userRef, { balance: 0, clicks: 0, name: user.displayName, email: user.email, joined: serverTimestamp() });
                     }
                 });
 
-                // ২. অ্যাডমিন সেটিংস সিঙ্ক (আপনার অ্যাডমিন প্যানেলের পাথ অনুযায়ী)
+                // ২. অ্যাডমিন সেটিংস সিঙ্ক (আপনার অ্যাডমিন প্যানেলের পাথ অনুযায়ী)
                 const taskSettingsRef = doc(db, 'admin_settings', 'tasks');
                 onSnapshot(taskSettingsRef, (docSnap) => {
                     if (docSnap.exists()) {
                         const data = docSnap.data();
                         
-                        // সুইচ লজিক - অ্যাডমিন প্যানেলের আইডি ব্যবহার করা হয়েছে
+                        // সুইচ লজিক - অ্যাডমিন প্যানেলের আইডি ব্যবহার করা হয়েছে
                         taskSettings.mini_task1 = (data.mini_task1 !== false);
                         taskSettings.mini_task2 = (data.mini_task2 !== false);
                         taskSettings.mini_task3 = (data.mini_task3 !== false);
@@ -84,7 +95,8 @@
                 const globalSettingsRef = doc(db, 'admin_settings', 'global');
                 onSnapshot(globalSettingsRef, (docSnap) => {
                     if (docSnap.exists() && docSnap.data().notice) {
-                        document.getElementById('notice-text').innerText = "📢 " + docSnap.data().notice;
+                        currentGlobalNotice = docSnap.data().notice; // গ্লোবাল নোটিশ স্টোর
+                        document.getElementById('notice-text').innerText = "📢 " + currentGlobalNotice;
                         document.getElementById('mini-notice-bar').classList.remove('hidden');
                     } else {
                         document.getElementById('mini-notice-bar').classList.add('hidden');
@@ -116,7 +128,7 @@
                         statusEl.classList.remove('text-green-500');
                     } else {
                         el.classList.remove('opacity-40', 'grayscale', 'pointer-events-none');
-                        statusEl.innerText = "চলমান (৳০.০৭)";
+                        statusEl.innerText = `চলমান (৳${REWARD_AMOUNT.toFixed(2)})`;
                         statusEl.classList.remove('text-red-500');
                         statusEl.classList.add('text-green-500');
                     }
@@ -129,7 +141,7 @@
             if (!taskSettings.mini_task1) return;
             if (typeof show_10352096 === 'function') {
                 show_10352096().then(() => giveReward("রিওয়ার্ড অ্যাড"))
-                .catch(() => showModal("ত্রুটি", "অ্যাড লোড হয়নি।", "❌"));
+                .catch(() => showModal("ত্রুটি", "অ্যাড লোড হয়নি।", "❌"));
             } else { showModal("অপেক্ষা করুন", "অ্যাড সার্ভিস রেডি হচ্ছে...", "⏳"); }
         };
 
@@ -154,7 +166,7 @@
                 balance: increment(REWARD_AMOUNT),
                 clicks: increment(1)
             });
-            showModal("সফল!", `${taskName} থেকে ৳${REWARD_AMOUNT} যোগ হয়েছে।`, "💰");
+            showModal("সফল!", `${taskName} থেকে ৳${REWARD_AMOUNT.toFixed(2)} যোগ হয়েছে।`, "💰");
         }
 
         // Withdraw Functions
@@ -177,13 +189,66 @@
                 timestamp: serverTimestamp()
             };
 
-            // উইথড্র পাথও ওয়েবসাইটের মতো করা হয়েছে
+            // উইথড্র রিকোয়েস্ট অ্যাডমিন ডাটাবেজে সাবমিট
             await addDoc(collection(db, 'withdraws'), withdrawData);
+            
+            // ইউজারের নিজের ব্যালেন্স ডিডাক্ট করা হচ্ছে
             const userRef = doc(db, 'users', auth.currentUser.uid);
             await updateDoc(userRef, { balance: increment(-amount) });
 
+            // ২% রেফার কমিশন ডিস্ট্রিবিউশন লজিক (উইথড্র করার সাথে সাথে রেফারার পাবে)
+            if (userData && userData.referredBy) {
+                const referrerRef = doc(db, 'users', userData.referredBy);
+                const referBonus = amount * 0.02; // উইথড্রর ২% অংশ
+                await updateDoc(referrerRef, { balance: increment(referBonus) });
+            }
+
             closeWithdrawModal();
-            showModal("সফল", "রিকোয়েস্ট পাঠানো হয়েছে। ২-২৪ ঘণ্টার মধ্যে পেমেন্ট পাবেন।", "✅");
+            showModal("সফল", "রিকোয়েস্ট পাঠানো হয়েছে। ২-২৪ ঘণ্টার মধ্যে পেমেন্ট পাবেন।", "✅");
+        };
+
+        // Referral Custom Core Logic
+        window.copyReferLink = () => {
+            const user = auth.currentUser;
+            if (!user) return;
+            const tempInput = document.createElement("input");
+            tempInput.value = user.uid;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+            showModal("কপি হয়েছে!", "আপনার রেফার কোড সফলভাবে কপি হয়েছে। আপনার বন্ধুদের আমন্ত্রণ জানান!", "📋");
+        };
+
+        window.submitReferralCode = async () => {
+            const user = auth.currentUser;
+            if (!user) return;
+            const codeInput = document.getElementById('referral-input').value.trim();
+            if (!codeInput) {
+                return showModal("সতর্কতা", "দয়া করে একটি রেফার কোড প্রদান করুন।", "⚠️");
+            }
+            if (codeInput === user.uid) {
+                return showModal("ত্রুটি", "আপনি নিজের কোড নিজে ব্যবহার করতে পারবেন না!", "❌");
+            }
+
+            try {
+                const referrerRef = doc(db, 'users', codeInput);
+                const referrerSnap = await getDoc(referrerRef);
+                if (referrerSnap.exists()) {
+                    const userRef = doc(db, 'users', user.uid);
+                    await updateDoc(userRef, { referredBy: codeInput });
+                    await updateDoc(referrerRef, { referralsCount: increment(1) });
+                    
+                    document.getElementById('refer-input-area').classList.add('hidden');
+                    document.getElementById('referred-status-area').classList.remove('hidden');
+                    showModal("সফল!", "রেফার কোড সফলভাবে যুক্ত হয়েছে।", "✅");
+                } else {
+                    showModal("ত্রুটি", "ভুল রেফার কোড! সঠিক কোড সাবমিট করুন।", "❌");
+                }
+            } catch (err) {
+                console.error(err);
+                showModal("ত্রুটি", "নেটওয়ার্ক সমস্যা হয়েছে। আবার চেষ্টা করুন।", "❌");
+            }
         };
 
         window.loadHistory = () => {
@@ -219,7 +284,7 @@
         // UI Helpers
         window.openWithdrawModal = () => {
             const balance = parseFloat(document.getElementById('balance').innerText);
-            if(balance < 50) return showModal("ব্যালেন্স কম", "উইথড্র করতে কমপক্ষে ৫০ টাকা প্রয়োজন।", "❌");
+            if(balance < 50) return showModal("ব্যালেন্স কম", "উইথড্র করতে কমপক্ষে ৫০ টাকা প্রয়োজন।", "❌");
             withdrawModal.classList.remove('hidden');
         };
         window.closeWithdrawModal = () => withdrawModal.classList.add('hidden');
@@ -246,6 +311,13 @@
             mainModal.classList.remove('hidden');
         };
         window.closeModal = () => mainModal.classList.add('hidden');
+
+        // নোটিশ ক্লিক ইভেন্ট (নোটিশ যত বড়ই হোক দেখার জন্য)
+        window.showFullNotice = () => {
+            if (currentGlobalNotice) {
+                showModal("ঘোষণা ও নোটিশ", currentGlobalNotice, "📢");
+            }
+        };
     </script>
 
     <!-- Monetag SDK -->
@@ -263,7 +335,8 @@
 </head>
 <body class="min-h-screen pb-24">
 
-    <div id="mini-notice-bar" class="bg-blue-600 text-white py-2 px-4 hidden sticky top-0 z-[1000] shadow-xl">
+    <!-- dynamic Notice bar (ক্লিক করলে পপ-আপে সম্পূর্ণ বড় নোটিশ ওপেন হবে) -->
+    <div id="mini-notice-bar" onclick="showFullNotice()" class="bg-blue-600 hover:bg-blue-700 transition-colors text-white py-2 px-4 hidden sticky top-0 z-[1000] shadow-xl cursor-pointer">
         <marquee id="notice-text" behavior="scroll" direction="left" scrollamount="6" class="text-xs font-bold"></marquee>
     </div>
 
@@ -274,11 +347,11 @@
                 <i class="fas fa-bolt text-white"></i>
             </div>
             <h1 class="text-4xl font-black text-white italic">SAFIN VAI <span class="text-blue-500 text-3xl">PRO</span></h1>
-            <p class="text-slate-400 mt-3 font-medium">অ্যাড দেখে আয় করার সেরা প্ল্যাটফর্ম</p>
+            <p class="text-slate-400 mt-3 font-medium">অ্যাড দেখে আয় করার সেরা প্ল্যাটফর্ম</p>
         </div>
         <button onclick="signInWithGoogle()" class="w-full max-w-xs bg-white text-slate-900 font-black py-5 rounded-[2rem] flex items-center justify-center gap-4 shadow-2xl active:scale-95 transition">
             <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" class="w-6 h-6">
-            গুগল দিয়ে প্রবেশ করুন
+            গুগল দিয়ে প্রবেশ করুন
         </button>
     </div>
 
@@ -308,10 +381,44 @@
                 <div class="glass p-5 rounded-[2rem] text-center border-b-2 border-purple-500/50">
                     <i class="fas fa-gift text-purple-500 mb-2"></i>
                     <p class="text-[10px] opacity-50 font-bold uppercase">বোনাস</p>
-                    <h4 class="text-xl font-black">৳০.০৭</h4>
+                    <h4 class="text-xl font-black">৳১.৫০</h4>
                 </div>
             </div>
 
+            <!-- Referral Card Section -->
+            <div class="glass p-6 rounded-[2rem] mb-6 border-l-4 border-yellow-500 shadow-xl">
+                <h3 class="text-md font-bold text-white mb-2 flex items-center gap-2">
+                    <i class="fas fa-users text-yellow-500"></i> রেফার ও আয় (২% লাইফটাইম কমিশন)
+                </h3>
+                <p class="text-xs text-slate-400 mb-4">
+                    আপনার বন্ধুদের রেফার কোডটি শেয়ার করুন। আপনার রেফার করা বন্ধুরা যখনই ক্যাশআউট করবে, তার ২% অর্থ সরাসরি কমিশন হিসেবে আপনার একাউন্ট ব্যালেন্সে অটোমেটিক যোগ হয়ে যাবে!
+                </p>
+                
+                <!-- Share Code Area -->
+                <div class="flex items-center justify-between bg-slate-900/60 p-3 rounded-2xl border border-white/5 mb-4">
+                    <div>
+                        <span class="text-[9px] text-slate-400 uppercase font-bold block">আপনার রেফার কোড</span>
+                        <span id="my-refer-code" class="text-xs font-mono font-bold text-yellow-500">লোড হচ্ছে...</span>
+                    </div>
+                    <button onclick="copyReferLink()" class="bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-500 text-xs font-bold px-3 py-2 rounded-xl transition flex items-center gap-1">
+                        <i class="fas fa-copy"></i> কপি কোড
+                    </button>
+                </div>
+
+                <!-- Submit Referral Code Area -->
+                <div id="refer-input-area">
+                    <p class="text-[11px] text-slate-400 mb-2">আপনি কি কোনো বন্ধুর মাধ্যমে আমন্ত্রিত হয়েছেন? কোডটি লিখুন:</p>
+                    <div class="flex gap-2">
+                        <input type="text" id="referral-input" placeholder="বন্ধুর রেফার কোড দিন" class="flex-1 bg-slate-900/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none">
+                        <button onclick="submitReferralCode()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition">সাবমিট</button>
+                    </div>
+                </div>
+                <div id="referred-status-area" class="hidden text-xs text-green-500 font-bold flex items-center gap-1">
+                    <i class="fas fa-check-circle"></i> আপনি সফলভাবে আপনার বন্ধুর আমন্ত্রণে যুক্ত হয়েছেন!
+                </div>
+            </div>
+
+            <!-- Tasks list -->
             <div class="space-y-4">
                 <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fas fa-bolt text-yellow-500"></i> আপনার টাস্কসমূহ</h2>
                 
@@ -320,7 +427,7 @@
                         <div class="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500"><i class="fas fa-video"></i></div>
                         <div>
                             <h4 class="font-bold text-sm">ভিডিও অ্যাড টাস্ক</h4>
-                            <p id="status-1" class="text-[10px] text-green-500 font-bold">চলমান (৳০.০৭)</p>
+                            <p id="status-1" class="text-[10px] text-green-500 font-bold">চলমান (৳১.৫০)</p>
                         </div>
                     </div>
                     <i class="fas fa-play-circle text-blue-500 text-xl"></i>
@@ -331,7 +438,7 @@
                         <div class="w-12 h-12 bg-purple-500/10 rounded-2xl flex items-center justify-center text-purple-500"><i class="fas fa-clone"></i></div>
                         <div>
                             <h4 class="font-bold text-sm">পপ-আপ টাস্ক</h4>
-                            <p id="status-2" class="text-[10px] text-green-500 font-bold">চলমান (৳০.০৭)</p>
+                            <p id="status-2" class="text-[10px] text-green-500 font-bold">চলমান (৳১.৫০)</p>
                         </div>
                     </div>
                     <i class="fas fa-play-circle text-purple-500 text-xl"></i>
@@ -342,7 +449,7 @@
                         <div class="w-12 h-12 bg-green-500/10 rounded-2xl flex items-center justify-center text-green-500"><i class="fas fa-external-link-alt"></i></div>
                         <div>
                             <h4 class="font-bold text-sm">ডাইরেক্ট লিঙ্ক টাস্ক</h4>
-                            <p id="status-3" class="text-[10px] text-green-500 font-bold">চলমান (৳০.০৭)</p>
+                            <p id="status-3" class="text-[10px] text-green-500 font-bold">চলমান (৳১.৫০)</p>
                         </div>
                     </div>
                     <i class="fas fa-external-link text-green-500 text-xl"></i>
@@ -389,7 +496,7 @@
         <div class="glass p-8 rounded-[3rem] w-full max-w-xs text-center border-t-4 border-blue-600">
             <div id="modal-icon" class="text-6xl mb-4"></div>
             <h3 id="modal-title" class="text-xl font-bold mb-2 text-white"></h3>
-            <p id="modal-text" class="text-sm opacity-50 mb-8"></p>
+            <p id="modal-text" class="text-sm opacity-50 mb-8 max-h-[150px] overflow-y-auto whitespace-pre-wrap"></p>
             <button onclick="closeModal()" class="w-full btn-gradient py-4 rounded-2xl font-black">বন্ধ করুন</button>
         </div>
     </div>
