@@ -14,10 +14,10 @@
             initializeAuth, 
             indexedDBLocalPersistence, 
             browserLocalPersistence,
-            signInWithPopup, 
-            signInWithRedirect, 
-            getRedirectResult, 
-            GoogleAuthProvider, 
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            sendPasswordResetEmail,
+            updateProfile,
             onAuthStateChanged, 
             signOut 
         } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
@@ -46,9 +46,7 @@
         });
 
         const db = getFirestore(app);
-        const provider = new GoogleAuthProvider();
 
-        // Global state
         let userData = null;
         let taskSettings = { mini_task1: true, mini_task2: true, mini_task3: true };
         const REWARD_AMOUNT = 0.25; // $3 CPM অনুযায়ী রিওয়ার্ড ০.২৫ টাকা সেট করা হয়েছে
@@ -62,51 +60,129 @@
         const withdrawModal = document.getElementById('withdraw-modal');
         const mainModal = document.getElementById('modal');
 
-        // রিডাইরেক্ট হয়ে ফিরে আসার পর ইউজার ডেটা প্রসেস করার ব্যাকআপ হ্যান্ডলার
-        getRedirectResult(auth)
-            .then((result) => {
-                if (result && result.user) {
-                    console.log("Redirect login successful:", result.user);
-                    closeModal();
-                }
-            })
-            .catch((err) => {
-                console.error("Redirect Error caught:", err);
-                // সেশন স্টোরেজ ব্লকড থাকলে বা মিসিং ইনিশিয়াল স্টেট এরর আসলে ইউজারকে সঠিক গাইডলাইন দেখানো হবে
-                if (
-                    err.code === "auth/web-storage-unsupported" || 
-                    err.code === "auth/operation-not-supported-in-this-environment" ||
-                    err.message.includes("missing initial state")
-                ) {
-                    showModal(
-                        "লগইন ত্রুটি", 
-                        "টেলিগ্রাম বা ইন-অ্যাপ ব্রাউজার ব্লকের কারণে লগইন করা যাচ্ছে না। দয়া করে উপরে থ্রি-ডট (⋮) মেনুতে ক্লিক করে 'Open in Chrome' বা 'Default Browser' সিলেক্ট করুন।", 
-                        "❌"
-                    );
-                }
-            });
+        // ইমেল-পাসওয়ার্ড দিয়ে লগইন ও নিবন্ধনের কাস্টম মেথডসমূহ
+        window.switchAuthTab = (tab) => {
+            const formLogin = document.getElementById('form-login');
+            const formSignup = document.getElementById('form-signup');
+            const tabLogin = document.getElementById('tab-login');
+            const tabSignup = document.getElementById('tab-signup');
 
-        // Auth Logic (Popup প্রথমে চেষ্টা করবে, পপআপ ব্লক বা ব্যর্থ হলে রিডাইরেক্ট মোডে চেষ্টা করবে)
-        window.signInWithGoogle = async () => {
-            showModal("অপেক্ষা করুন", "গুগল সাইন-ইন প্রসেস করা হচ্ছে...", "⏳");
+            if (tab === 'login') {
+                formLogin.classList.remove('hidden');
+                formSignup.classList.add('hidden');
+                tabLogin.className = "flex-1 py-3 text-sm font-bold rounded-2xl transition-all duration-300 bg-blue-600 text-white shadow-lg";
+                tabSignup.className = "flex-1 py-3 text-sm font-bold rounded-2xl transition-all duration-300 text-slate-400";
+            } else {
+                formLogin.classList.add('hidden');
+                formSignup.classList.remove('hidden');
+                tabLogin.className = "flex-1 py-3 text-sm font-bold rounded-2xl transition-all duration-300 text-slate-400";
+                tabSignup.className = "flex-1 py-3 text-sm font-bold rounded-2xl transition-all duration-300 bg-blue-600 text-white shadow-lg";
+            }
+        };
+
+        window.togglePasswordVisibility = (id, btn) => {
+            const input = document.getElementById(id);
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        };
+
+        window.handleSignUp = async () => {
+            const name = document.getElementById('signup-name').value.trim();
+            const phone = document.getElementById('signup-phone').value.trim();
+            const email = document.getElementById('signup-email').value.trim();
+            const password = document.getElementById('signup-password').value;
+
+            if (!name || !phone || !email || !password) {
+                return showModal("সতর্কতা", "সব তথ্য সঠিকভাবে দিন।", "⚠️");
+            }
+            if (phone.length < 11 || !phone.startsWith("01")) {
+                return showModal("সতর্কতা", "১১ ডিজিটের সঠিক বাংলাদেশী মোবাইল নম্বর দিন।", "⚠️");
+            }
+            if (password.length < 6) {
+                return showModal("সতর্কতা", "পাসওয়ার্ড কমপক্ষে ৬ ডিজিটের হতে হবে।", "⚠️");
+            }
+
+            showModal("অপেক্ষা করুন", "আপনার অ্যাকাউন্ট তৈরি করা হচ্ছে...", "⏳");
+
             try {
-                const result = await signInWithPopup(auth, provider);
-                if (result && result.user) {
-                    closeModal();
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                // Firebase Profile আপডেট করা
+                await updateProfile(user, { displayName: name });
+
+                // Firestore ডেটাবেজে ইউজার প্রোফাইল এবং ফোন নম্বর যুক্ত করা
+                const userRef = doc(db, 'users', user.uid);
+                await setDoc(userRef, {
+                    name: name,
+                    email: email,
+                    phone: phone,
+                    balance: 0,
+                    clicks: 0,
+                    joined: serverTimestamp()
+                });
+
+                closeModal();
+                showModal("সফল!", "আপনার অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে। এবার অ্যাপে প্রবেশ করুন।", "✅");
+            } catch (error) {
+                console.error("Signup error: ", error);
+                let errorMessage = "অ্যাকাউন্ট তৈরি করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।";
+                if (error.code === "auth/email-already-in-use") {
+                    errorMessage = "এই ইমেইলটি ইতিমধ্যে ব্যবহার করা হয়েছে। অন্য ইমেইল দিয়ে চেষ্টা করুন।";
+                } else if (error.code === "auth/invalid-email") {
+                    errorMessage = "ভুল ইমেইল ঠিকানা প্রদান করেছেন।";
                 }
-            } catch (popupErr) {
-                console.log("Popup blocked or failed, trying redirect mode...", popupErr);
-                try {
-                    // পপআপ ফেইল হলে সরাসরি রিডাইরেক্টেড সাইন-ইন ট্রিগার করবে
-                    await signInWithRedirect(auth, provider);
-                } catch (redirectErr) {
-                    console.error("Redirect error: ", redirectErr);
-                    showModal(
-                        "লগইন ত্রুটি", 
-                        "টেলিগ্রাম বা ইন-অ্যাপ ব্রাউজার ব্লকের কারণে লগইন করা যাচ্ছে না। দয়া করে উপরে থ্রি-ডট মেনুতে ক্লিক করে 'Open in Chrome' করুন।", 
-                        "❌"
-                    );
+                showModal("ত্রুটি", errorMessage, "❌");
+            }
+        };
+
+        window.handleSignIn = async () => {
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+
+            if (!email || !password) {
+                return showModal("সতর্কতা", "সব তথ্য সঠিকভাবে দিন।", "⚠️");
+            }
+
+            showModal("অপেক্ষা করুন", "লগইন প্রসেস করা হচ্ছে...", "⏳");
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                closeModal();
+            } catch (error) {
+                console.error("Login error: ", error);
+                let errorMessage = "লগইন করতে ব্যর্থ হয়েছে। অনুগ্রহ করে আপনার ইমেইল ও পাসওয়ার্ড চেক করুন।";
+                if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password" || error.code === "auth/invalid-credential") {
+                    errorMessage = "ভুল ইমেইল অথবা পাসওয়ার্ড দেওয়া হয়েছে।";
+                } else if (error.code === "auth/too-many-requests") {
+                    errorMessage = "অতিরিক্ত ভুল পাসওয়ার্ড ট্রাই করায় আইডি সাময়িকভাবে ব্লক হয়েছে। পরে চেষ্টা করুন।";
                 }
+                showModal("ত্রুটি", errorMessage, "❌");
+            }
+        };
+
+        window.handleForgotPassword = async () => {
+            const email = document.getElementById('login-email').value.trim();
+            if (!email) {
+                return showModal("সতর্কতা", "পাসওয়ার্ড রিসেট করতে প্রথমে 'ইমেইল ঠিকানা' ইনপুট বক্সে আপনার ইমেইলটি দিন।", "⚠️");
+            }
+
+            showModal("অপেক্ষা করুন", "রিসেট ইমেইল পাঠানো হচ্ছে...", "⏳");
+
+            try {
+                await sendPasswordResetEmail(auth, email);
+                showModal("সফল!", "আপনার ইমেইলে পাসওয়ার্ড রিসেট করার লিঙ্ক পাঠানো হয়েছে। অনুগ্রহ করে ইনবক্স বা স্প্যাম ফোল্ডার চেক করুন।", "📧");
+            } catch (error) {
+                console.error("Password reset error: ", error);
+                showModal("ত্রুটি", "রিসেট লিঙ্ক পাঠানো সম্ভব হয়নি। ইমেইলটি সঠিক কিনা যাচাই করুন।", "❌");
             }
         };
 
@@ -116,8 +192,11 @@
             if (user) {
                 loginScreen.classList.add('hidden');
                 appScreen.classList.remove('hidden');
-                document.getElementById('user-photo').src = user.photoURL || '';
-                document.getElementById('user-name').innerText = user.displayName;
+                
+                // ইমেইল অথেনটিকেশনের ক্ষেত্রে প্রোফাইল ফোটো জেনারেট করা
+                const avatarUrl = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'User')}&background=2563eb&color=ffffff&bold=true`;
+                document.getElementById('user-photo').src = avatarUrl;
+                document.getElementById('user-name').innerText = user.displayName || 'ব্যবহারকারী';
                 document.getElementById('user-id-display').innerText = "ID: " + user.uid.substring(0, 10).toUpperCase();
 
                 // ১. ইউজার প্রোফাইল লিসেনার (ওয়েবসাইটের পাথ অনুযায়ী)
@@ -127,6 +206,7 @@
                         userData = snapshot.data();
                         document.getElementById('balance').innerText = (userData.balance || 0).toFixed(2);
                         document.getElementById('user-clicks').innerText = userData.clicks || 0;
+                        document.getElementById('user-phone-display').innerText = userData.phone || '01XXXXXXXXX';
                         
                         // সেট রেফারেল ইনফরমেশন UI
                         document.getElementById('my-refer-code').innerText = user.uid;
@@ -138,13 +218,21 @@
                             document.getElementById('referred-status-area').classList.add('hidden');
                         }
                     } else {
-                        setDoc(userRef, { balance: 0, clicks: 0, name: user.displayName, email: user.email, joined: serverTimestamp() });
+                        // যদি কোনো কারণে আগে ডেটা না তৈরি হয়
+                        setDoc(userRef, { 
+                            balance: 0, 
+                            clicks: 0, 
+                            name: user.displayName, 
+                            email: user.email, 
+                            phone: 'N/A', 
+                            joined: serverTimestamp() 
+                        });
                     }
                 }, (error) => {
                     console.error("User Snapshot Error: ", error);
                 });
 
-                // ২. অ্যাডমিন সেটিংস সিঙ্ক (আপনার অ্যাডমিন প্যানেলের পাথ অনুযায়ী)
+                // ২. অ্যাডমিন সেটিংস সিঙ্ক
                 const taskSettingsRef = doc(db, 'admin_settings', 'tasks');
                 onSnapshot(taskSettingsRef, (docSnap) => {
                     if (docSnap.exists()) {
@@ -244,7 +332,7 @@
         // Withdraw Functions
         window.submitWithdraw = async () => {
             const amount = parseFloat(document.getElementById('withdraw-amount').value);
-            const number = document.getElementById('withdraw-number').value;
+            const number = document.getElementById('withdraw-number').value.trim(); // Reads current user input dynamically
             const balance = parseFloat(document.getElementById('balance').innerText);
 
             if(!selectedPaymentMethod || !amount || amount < 50 || amount > balance || number.length < 11) {
@@ -255,7 +343,7 @@
                 userId: auth.currentUser.uid,
                 userName: auth.currentUser.displayName,
                 amount: amount,
-                number: number,
+                number: number, // User can input any custom number of their choice
                 method: selectedPaymentMethod,
                 status: "Pending",
                 timestamp: serverTimestamp()
@@ -359,6 +447,14 @@
         window.openWithdrawModal = () => {
             const balance = parseFloat(document.getElementById('balance').innerText);
             if(balance < 50) return showModal("ব্যালেন্স কম", "উইথড্র করতে কমপক্ষে ৫০ টাকা প্রয়োজন।", "❌");
+            
+            // ফোন নম্বর ইনপুট ফিল্ডে সংরক্ষিত নম্বর স্বয়ংক্রিয়ভাবে ফিল করা (তবে ইউজার চাইলে এটি এডিট/পরিবর্তন করতে পারবেন)
+            if (userData && userData.phone && userData.phone !== "N/A") {
+                document.getElementById('withdraw-number').value = userData.phone;
+            } else {
+                document.getElementById('withdraw-number').value = "";
+            }
+            
             withdrawModal.classList.remove('hidden');
         };
         window.closeWithdrawModal = () => withdrawModal.classList.add('hidden');
@@ -409,24 +505,86 @@
 </head>
 <body class="min-h-screen pb-24">
 
-    <!-- dynamic Notice bar (ক্লিক করলে পপ-আপে সম্পূর্ণ বড় নোটিশ ওপেন হবে) -->
+    <!-- dynamic Notice bar -->
     <div id="mini-notice-bar" onclick="showFullNotice()" class="bg-blue-600 hover:bg-blue-700 transition-colors text-white py-2 px-4 hidden sticky top-0 z-[1000] shadow-xl cursor-pointer">
         <marquee id="notice-text" behavior="scroll" direction="left" scrollamount="6" class="text-xs font-bold"></marquee>
     </div>
 
-    <!-- Login -->
-    <div id="login-screen" class="fixed inset-0 bg-slate-950 z-[2000] flex flex-col items-center justify-center p-8">
-        <div class="text-center mb-10">
-            <div class="w-24 h-24 bg-blue-600 rounded-[2.5rem] mx-auto flex items-center justify-center text-5xl mb-6 shadow-2xl shadow-blue-500/40 animate-pulse">
+    <!-- Login Screen with Email & Password -->
+    <div id="login-screen" class="fixed inset-0 bg-slate-950 z-[2000] overflow-y-auto flex flex-col items-center justify-start py-8 px-6">
+        <div class="text-center mb-6 mt-4">
+            <div class="w-20 h-20 bg-blue-600 rounded-[2rem] mx-auto flex items-center justify-center text-4xl mb-4 shadow-2xl shadow-blue-500/40 animate-pulse">
                 <i class="fas fa-bolt text-white"></i>
             </div>
-            <h1 class="text-4xl font-black text-white italic">SAFIN VAI <span class="text-blue-500 text-3xl">PRO</span></h1>
-            <p class="text-slate-400 mt-3 font-medium">অ্যাড দেখে আয় করার সেরা প্ল্যাটফর্ম</p>
+            <h1 class="text-3xl font-black text-white italic">SAFIN VAI <span class="text-blue-500 text-2xl">PRO</span></h1>
+            <p class="text-slate-400 mt-1 text-xs font-medium">অ্যাড দেখে আয় করার সেরা বিশ্বস্ত প্ল্যাটফর্ম</p>
         </div>
-        <button onclick="signInWithGoogle()" class="w-full max-w-xs bg-white text-slate-900 font-black py-5 rounded-[2rem] flex items-center justify-center gap-4 shadow-2xl active:scale-95 transition">
-            <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" class="w-6 h-6">
-            গুগল দিয়ে প্রবেশ করুন
-        </button>
+
+        <!-- Auth Card -->
+        <div class="w-full max-w-sm glass p-6 rounded-[2.5rem] shadow-2xl border border-white/5 mb-8">
+            <!-- Tabs Toggle -->
+            <div class="flex bg-slate-900/60 p-1.5 rounded-2xl mb-6">
+                <button onclick="switchAuthTab('login')" id="tab-login" class="flex-1 py-3 text-sm font-bold rounded-xl transition-all duration-300 bg-blue-600 text-white shadow-lg">লগইন</button>
+                <button onclick="switchAuthTab('signup')" id="tab-signup" class="flex-1 py-3 text-sm font-bold rounded-xl transition-all duration-300 text-slate-400">নিবন্ধন</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="form-login" onsubmit="event.preventDefault(); handleSignIn();" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2">ইমেইল ঠিকানা</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-500"><i class="fas fa-envelope"></i></span>
+                        <input type="email" id="login-email" required placeholder="name@domain.com" class="w-full bg-slate-900/60 border border-white/10 rounded-2xl py-3.5 pl-11 pr-4 text-sm text-white placeholder-slate-600 outline-none focus:border-blue-500 transition">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2">পাসওয়ার্ড</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-500"><i class="fas fa-lock"></i></span>
+                        <input type="password" id="login-password" required placeholder="••••••••" class="w-full bg-slate-900/60 border border-white/10 rounded-2xl py-3.5 pl-11 pr-12 text-sm text-white placeholder-slate-600 outline-none focus:border-blue-500 transition">
+                        <button type="button" onclick="togglePasswordVisibility('login-password', this)" class="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-500"><i class="fas fa-eye"></i></button>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <button type="button" onclick="handleForgotPassword()" class="text-xs text-blue-400 hover:underline">পাসওয়ার্ড ভুলে গেছেন?</button>
+                </div>
+                <button type="submit" class="w-full btn-gradient text-white font-black py-4 rounded-2xl shadow-xl hover:opacity-95 active:scale-95 transition mt-4">লগইন করুন</button>
+            </form>
+
+            <!-- Signup Form -->
+            <form id="form-signup" onsubmit="event.preventDefault(); handleSignUp();" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2">আপনার নাম</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-500"><i class="fas fa-user"></i></span>
+                        <input type="text" id="signup-name" placeholder="যেমন: সাজিদ হাসান" class="w-full bg-slate-900/60 border border-white/10 rounded-2xl py-3.5 pl-11 pr-4 text-sm text-white placeholder-slate-600 outline-none focus:border-blue-500 transition">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2">মোবাইল নম্বর (বিকাশ/নগদ)</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-500"><i class="fas fa-phone"></i></span>
+                        <input type="tel" id="signup-phone" placeholder="017XXXXXXXX" class="w-full bg-slate-900/60 border border-white/10 rounded-2xl py-3.5 pl-11 pr-4 text-sm text-white placeholder-slate-600 outline-none focus:border-blue-500 transition">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2">ইমেইল ঠিকানা</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-500"><i class="fas fa-envelope"></i></span>
+                        <input type="email" id="signup-email" placeholder="example@gmail.com" class="w-full bg-slate-900/60 border border-white/10 rounded-2xl py-3.5 pl-11 pr-4 text-sm text-white placeholder-slate-600 outline-none focus:border-blue-500 transition">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2">পাসওয়ার্ড</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-500"><i class="fas fa-lock"></i></span>
+                        <input type="password" id="signup-password" placeholder="কমপক্ষে ৬ ডিজিট দিন" class="w-full bg-slate-900/60 border border-white/10 rounded-2xl py-3.5 pl-11 pr-12 text-sm text-white placeholder-slate-600 outline-none focus:border-blue-500 transition">
+                        <button type="button" onclick="togglePasswordVisibility('signup-password', this)" class="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-500"><i class="fas fa-eye"></i></button>
+                    </div>
+                </div>
+                <button type="submit" class="w-full btn-gradient text-white font-black py-4 rounded-2xl shadow-xl hover:opacity-95 active:scale-95 transition mt-4">অ্যাকাউন্ট তৈরি করুন</button>
+            </form>
+        </div>
     </div>
 
     <!-- App Screen -->
@@ -436,7 +594,8 @@
                 <img id="user-photo" src="" class="w-12 h-12 rounded-full border-2 border-blue-500">
                 <div>
                     <h4 id="user-name" class="text-sm font-bold text-white truncate max-w-[120px]">User</h4>
-                    <p class="text-[10px] text-blue-400 font-mono" id="user-id-display">ID: ---</p>
+                    <p class="text-[10px] text-blue-400 font-bold" id="user-phone-display">01XXXXXXXXX</p>
+                    <p class="text-[9px] text-slate-500 font-mono" id="user-id-display">ID: ---</p>
                 </div>
             </div>
             <div class="glass px-5 py-3 rounded-2xl text-right">
@@ -465,7 +624,7 @@
                     <i class="fas fa-users text-yellow-500"></i> রেফার ও আয় (২% লাইফটাইম কমিশন)
                 </h3>
                 <p class="text-xs text-slate-400 mb-4">
-                    আপনার বন্ধুদের রেফার কোডটি শেয়ার করুন। আপনার রেফার করা বন্ধুরা যখনই ক্যাশআউট করবে, তার ২% অর্থ সরাসরি কমিশন হিসেবে আপনার একاونট ব্যালেন্সে অটোমেটিক যোগ হয়ে যাবে!
+                    আপনার বন্ধুদের রেফার কোডটি শেয়ার করুন। আপনার রেফার করা বন্ধুরা যখনই ক্যাশআউট করবে, তার ২% অর্থ সরাসরি কমিশন হিসেবে আপনার অ্যাকাউন্ট ব্যালেন্সে অটোমেটিক যোগ হয়ে যাবে!
                 </p>
                 
                 <!-- Share Code Area -->
@@ -500,7 +659,7 @@
                     <div class="flex items-center gap-4">
                         <div class="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500"><i class="fas fa-video"></i></div>
                         <div>
-                            <h4 class="font-bold text-sm">ভি디오 অ্যাড টাস্ক</h4>
+                            <h4 class="font-bold text-sm">ভিডিও অ্যাড টাস্ক</h4>
                             <p id="status-1" class="text-[10px] text-green-500 font-bold">চলমান (৳০.২৫)</p>
                         </div>
                     </div>
@@ -550,15 +709,20 @@
     </nav>
 
     <!-- Modals -->
+    <!-- উইথড্র মডাল (যেখানে ইউজার চাইলে তার যেকোনো নম্বর এডিট বা টাইপ করে ক্যাশআউট করতে পারবেন) -->
     <div id="withdraw-modal" class="fixed inset-0 bg-black/95 z-[3000] hidden flex items-center justify-center p-6 backdrop-blur-md">
-        <div class="glass p-8 rounded-[3rem] w-full max-w-sm border-t-4 border-blue-600">
-            <h3 class="text-xl font-bold mb-6 text-center">উইথড্র রিকোয়েস্ট</h3>
+        <div class="glass p-8 rounded-[3rem] w-full max-w-sm border-t-4 border-blue-600 shadow-2xl">
+            <h3 class="text-xl font-bold mb-2 text-center">উইথড্র রিকোয়েস্ট</h3>
+            <p class="text-[11px] text-yellow-500 text-center mb-6">সংরক্ষিত নম্বরটি মুছে যেকোনো পেমেন্ট নম্বর ব্যবহার করতে পারেন</p>
             <div class="flex gap-2 mb-4">
                 <button onclick="selectMethod('Bkash')" id="btn-bkash" class="method-btn flex-1 glass py-4 rounded-2xl text-xs font-bold transition">বিকাশ</button>
                 <button onclick="selectMethod('Nagad')" id="btn-nagad" class="method-btn flex-1 glass py-4 rounded-2xl text-xs font-bold transition">নগদ</button>
             </div>
             <input type="number" id="withdraw-amount" placeholder="পরিমাণ (৳)" class="w-full bg-slate-900/50 border border-white/10 rounded-2xl p-4 mb-3 text-white outline-none">
-            <input type="number" id="withdraw-number" placeholder="১১ ডিজিটের নম্বর দিন" class="w-full bg-slate-900/50 border border-white/10 rounded-2xl p-4 mb-8 text-white outline-none">
+            
+            <!-- এই ইনপুট ফিল্ডটি সম্পূর্ণ এডিটেবল, ইউজার তার ইচ্ছামত যেকোনো মোবাইল নম্বর দিতে পারবেন -->
+            <input type="number" id="withdraw-number" placeholder="১১ ডিজিটের পেমেন্ট নম্বর দিন" class="w-full bg-slate-900/50 border border-white/10 rounded-2xl p-4 mb-8 text-white outline-none">
+            
             <div class="flex gap-3">
                 <button onclick="closeWithdrawModal()" class="flex-1 bg-slate-800 py-4 rounded-2xl font-bold text-sm">বাতিল</button>
                 <button onclick="submitWithdraw()" class="flex-1 btn-gradient py-4 rounded-2xl font-black text-sm">সাবমিট</button>
@@ -566,6 +730,7 @@
         </div>
     </div>
 
+    <!-- Alert Modal -->
     <div id="modal" class="fixed inset-0 bg-black/90 z-[4000] hidden flex items-center justify-center p-6 backdrop-blur-md">
         <div class="glass p-8 rounded-[3rem] w-full max-w-xs text-center border-t-4 border-blue-600">
             <div id="modal-icon" class="text-6xl mb-4"></div>
