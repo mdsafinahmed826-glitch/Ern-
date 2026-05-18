@@ -488,6 +488,12 @@
                 showModal("ঘোষণা ও নোটিশ", currentGlobalNotice, "📢");
             }
         };
+        // ব্যাক বাটন চাপলে পুরোনো অ্যাড রানিং থাকা বন্ধ করার লজিক// ব্যাক বাটন চাপলে পুরোনো অ্যাড রানিং থাকা বন্ধ করার লজিক
+    window.addEventListener('pageshow', (e) => {
+            if (e.persisted || performance.navigation.type === 2) {
+                window.location.reload();
+            }
+        });
     </script>
 
     <!-- Monetag SDK -->
