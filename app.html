@@ -52,6 +52,7 @@
         const REWARD_AMOUNT = 0.25; // $3 CPM অনুযায়ী রিওয়ার্ড ০.২৫ টাকা সেট করা হয়েছে
         let selectedPaymentMethod = "";
         let currentGlobalNotice = ""; // নোটিশ স্টোর করার জন্য গ্লোবাল ভেরিয়েবল
+        let shouldReloadOnClose = false; // অ্যাড আটকে থাকা বন্ধ করার জন্য গ্লোবাল রিফ্রেশ ফ্ল্যাগ
 
         // Elements
         const loginScreen = document.getElementById('login-screen');
@@ -326,6 +327,7 @@
                 balance: increment(REWARD_AMOUNT),
                 clicks: increment(1)
             });
+            shouldReloadOnClose = true; // সফল নোটিশ বন্ধ করলেই রিলোড ট্রিগার হবে
             showModal("সফল!", `${taskName} থেকে ৳${REWARD_AMOUNT.toFixed(2)} যোগ হয়েছে।`, "💰");
         }
 
@@ -480,7 +482,15 @@
             document.getElementById('modal-icon').innerText = icon;
             mainModal.classList.remove('hidden');
         };
-        window.closeModal = () => mainModal.classList.add('hidden');
+        
+        // কাস্টম মোডাল ক্লোজ ফাংশন (যা সফল নোটিশে ক্লিক করলে অটো-রিলোড ট্রিগার করবে)
+        window.closeModal = () => {
+            mainModal.classList.add('hidden');
+            if (shouldReloadOnClose) {
+                shouldReloadOnClose = false;
+                window.location.reload();
+            }
+        };
 
         // নোটিশ ক্লিক ইভেন্ট (নোটিশ যত বড়ই হোক দেখার জন্য)
         window.showFullNotice = () => {
@@ -488,8 +498,9 @@
                 showModal("ঘোষণা ও নোটিশ", currentGlobalNotice, "📢");
             }
         };
-        // ব্যাক বাটন চাপলে পুরোনো অ্যাড রানিং থাকা বন্ধ করার লজিক// ব্যাক বাটন চাপলে পুরোনো অ্যাড রানিং থাকা বন্ধ করার লজিক
-    window.addEventListener('pageshow', (e) => {
+        
+        // ব্যাক বাটন চাপলে পুরোনো অ্যাড রানিং থাকা বন্ধ করার লজিক
+        window.addEventListener('pageshow', (e) => {
             if (e.persisted || performance.navigation.type === 2) {
                 window.location.reload();
             }
@@ -665,7 +676,7 @@
                     <div class="flex items-center gap-4">
                         <div class="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500"><i class="fas fa-video"></i></div>
                         <div>
-                            <h4 class="font-bold text-sm">ভিডিও অ্যাড টাস্ক</h4>
+                            <h4 class="font-bold text-sm">ভি디오 অ্যাড টাস্ক</h4>
                             <p id="status-1" class="text-[10px] text-green-500 font-bold">চলমান (৳০.২৫)</p>
                         </div>
                     </div>
