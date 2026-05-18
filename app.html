@@ -303,8 +303,6 @@
             if (typeof show_10352096 === 'function') {
                 show_10352096().then(() => {
                     giveReward("রিওয়ার্ড অ্যাড");
-                    // ১ সেকেন্ড পর জোরপূর্বক পেজ রিলোড করা হচ্ছে যাতে টেলিগ্রাম ব্রাউজারে হ্যাং হয়ে থাকা ওভারলে ব্যানারটি চলে যায়
-                    setTimeout(() => { window.location.reload(); }, 1000);
                 })
                 .catch(() => showModal("ত্রুটি", "অ্যাড লোড হয়নি।", "❌"));
             } else { showModal("অপেক্ষা করুন", "অ্যাড সার্ভিস রেডি হচ্ছে...", "⏳"); }
@@ -315,8 +313,6 @@
             if (typeof show_10352096 === 'function') {
                 show_10352096('pop').then(() => {
                     giveReward("পপ-আপ টাস্ক");
-                    // ১ সেকেন্ড পর জোরপূর্বক পেজ রিলোড করা হচ্ছে যাতে টেলিগ্রাম ব্রাউজারে হ্যাং হয়ে থাকা ওভারলে ব্যানারটি চলে যায়
-                    setTimeout(() => { window.location.reload(); }, 1000);
                 });
             }
         };
@@ -395,7 +391,7 @@
             if (!user) return;
             const codeInput = document.getElementById('referral-input').value.trim();
             if (!codeInput) {
-                return showModal("সতর্কতা", "দया করে একটি রেফার কোড প্রদান করুন।", "⚠️");
+                return showModal("সতর্কতা", "দয়া করে একটি রেফার কোড প্রদান করুন।", "⚠️");
             }
             if (codeInput === user.uid) {
                 return showModal("ত্রুটি", "আপনি নিজের কোড নিজে ব্যবহার করতে পারবেন না!", "❌");
