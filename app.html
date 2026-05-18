@@ -52,7 +52,6 @@
         const REWARD_AMOUNT = 0.25; // $3 CPM অনুযায়ী রিওয়ার্ড ০.২৫ টাকা সেট করা হয়েছে
         let selectedPaymentMethod = "";
         let currentGlobalNotice = ""; // নোটিশ স্টোর করার জন্য গ্লোবাল ভেরিয়েবল
-        let adClicked = false; // বিজ্ঞাপন ক্লিক ট্র্যাকিং ফ্ল্যাগ
 
         // Elements
         const loginScreen = document.getElementById('login-screen');
@@ -105,10 +104,10 @@
                 return showModal("سতর্কতা", "সব তথ্য সঠিকভাবে দিন।", "⚠️");
             }
             if (phone.length < 11 || !phone.startsWith("01")) {
-                return showModal("সতর্কতা", "১১ ডিজিটের সঠিক বাংলাদেশী মোবাইল নম্বর দিন।", "⚠️");
+                return showModal("سতর্কতা", "১১ ডিজিটের সঠিক বাংলাদেশী মোবাইল নম্বর দিন।", "⚠️");
             }
             if (password.length < 6) {
-                return showModal("সতর্কতা", "পাসওয়ার্ড কমপক্ষে ৬ ডিজিটের হতে হবে।", "⚠️");
+                return showModal("سতর্কতা", "পাসওয়ার্ড কমপক্ষে ৬ ডিজিটের হতে হবে।", "⚠️");
             }
 
             showModal("অপেক্ষা করুন", "আপনার অ্যাকাউন্ট তৈরি করা হচ্ছে...", "⏳");
@@ -297,23 +296,18 @@
             });
         }
 
-        // Tasks
+        // Tasks - হুবহু app (1).html এর মতো একদম সহজ পদ্ধতিতে ফিরিয়ে আনা হলো
         window.playInterstitialAd = () => {
             if (!taskSettings.mini_task1) return;
             if (typeof show_10352096 === 'function') {
-                adClicked = true; // বিজ্ঞাপন দেখার ট্র্যাকিং সচল করা হলো
                 show_10352096().then(() => giveReward("রিওয়ার্ড অ্যাড"))
-                .catch(() => {
-                    adClicked = false;
-                    showModal("ত্রুটি", "অ্যাড লোড হয়নি।", "❌");
-                });
+                .catch(() => showModal("ত্রুটি", "অ্যাড লোড হয়নি।", "❌"));
             } else { showModal("অপেক্ষা করুন", "অ্যাড সার্ভিস রেডি হচ্ছে...", "⏳"); }
         };
 
         window.playPopupAd = () => {
             if (!taskSettings.mini_task2) return;
             if (typeof show_10352096 === 'function') {
-                adClicked = true; // বিজ্ঞাপন দেখার ট্র্যাকিং সচল করা হলো
                 show_10352096('pop').then(() => giveReward("পপ-আপ টাস্ক"));
             }
         };
@@ -494,28 +488,6 @@
                 showModal("ঘোষণা ও নোটিশ", currentGlobalNotice, "📢");
             }
         };
-
-        // টেলিগ্রাম ইন-অ্যাপ ব্রাউজারের ব্যাকগ্রাউন্ড স্টেট ট্র্যাকিং ও অটো-রিফ্রেশ লজিক
-        const handleAdReturn = () => {
-            if (adClicked) {
-                adClicked = false;
-                window.location.reload();
-            }
-        };
-
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') {
-                handleAdReturn();
-            }
-        });
-
-        window.addEventListener('focus', handleAdReturn);
-
-        window.addEventListener('pageshow', (e) => {
-            if (e.persisted || performance.navigation.type === 2) {
-                window.location.reload();
-            }
-        });
     </script>
 
     <!-- Monetag SDK -->
@@ -687,7 +659,7 @@
                     <div class="flex items-center gap-4">
                         <div class="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500"><i class="fas fa-video"></i></div>
                         <div>
-                            <h4 class="font-bold text-sm">ভি디오 অ্যাড টাস্ক</h4>
+                            <h4 class="font-bold text-sm">ভিডিও অ্যাড টাস্ক</h4>
                             <p id="status-1" class="text-[10px] text-green-500 font-bold">চলমান (৳০.২৫)</p>
                         </div>
                     </div>
