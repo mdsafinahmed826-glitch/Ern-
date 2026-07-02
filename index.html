@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trick And Solution Expert - OBB Download Portal</title>
+    <title>Trick And Solution Expert (SAFIN 🇧🇩) - OBB Download Portal</title>
     <!-- FontAwesome Icons for modern UI -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -32,21 +32,36 @@
             text-align: center;
             padding: 25px 15px;
             border-bottom: 2px solid #141f2d;
+            position: relative;
         }
 
         header h1 {
-            font-size: 25px;
+            font-size: 26px;
             color: #ffffff;
-            font-weight: 700;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+
+        .owner-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #ffcc00, #ff9900);
+            color: #000;
+            font-size: 12px;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 20px;
+            margin-top: 6px;
+            text-transform: uppercase;
+            box-shadow: 0 2px 10px rgba(255, 204, 0, 0.2);
         }
 
         header p {
             font-size: 13px;
             color: #8fa0b5;
-            margin-top: 6px;
+            margin-top: 8px;
         }
 
-        /* ক্যাটাগরি নেভিগেশন */
+        /* মেনুবার ডিজাইন (যা সবসময় উপরে ফিক্সড থাকবে) */
         nav {
             background-color: #101924;
             border-bottom: 1px solid #141f2d;
@@ -55,27 +70,89 @@
             z-index: 100;
         }
 
-        nav ul {
-            list-style: none;
+        .nav-header-bar {
             display: flex;
-            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            max-width: 600px;
+            margin: 0 auto;
         }
 
-        nav ul li a {
+        /* মেনু টগল বাটন */
+        .menu-toggle-btn {
+            background: rgba(255, 204, 0, 0.1);
+            color: #ffcc00;
+            border: 1px solid rgba(255, 204, 0, 0.2);
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 700;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .menu-toggle-btn:hover {
+            background: rgba(255, 204, 0, 0.2);
+            transform: scale(1.02);
+        }
+
+        .nav-owner-badge {
+            font-weight: bold;
+            color: #fff;
+            font-size: 13px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            padding: 5px 12px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+        }
+
+        /* ড্রপডাউন মেনু লিস্ট (ডিফল্টভাবে বন্ধ থাকবে) */
+        .menu-list {
+            display: none;
+            list-style: none;
+            flex-direction: column;
+            background-color: #0d151e;
+            max-width: 600px;
+            margin: 0 auto;
+            border-top: 1px solid #141f2d;
+            border-bottom: 1px solid #141f2d;
+            transition: all 0.3s ease-in-out;
+        }
+
+        /* বাটন ক্লিক করলে এই ক্লাসটি যোগ হবে */
+        .menu-list.active {
+            display: flex;
+        }
+
+        .menu-list li a {
             display: block;
             padding: 15px 20px;
             color: #cbd5e1;
             text-decoration: none;
-            font-size: 15px;
-            font-weight: 500;
+            font-size: 14px;
+            font-weight: 600;
             border-bottom: 1px solid #141f2d;
-            transition: all 0.3s;
+            transition: all 0.2s ease;
             cursor: pointer;
         }
 
-        nav ul li a:hover {
-            background-color: #141f2d;
+        .menu-list li a:hover {
             color: #ffcc00;
+            background-color: rgba(255, 204, 0, 0.05);
+            padding-left: 28px;
+        }
+
+        .menu-list li a.active {
+            color: #ffcc00;
+            background-color: rgba(255, 204, 0, 0.08);
+            border-left: 4px solid #ffcc00;
             padding-left: 25px;
         }
 
@@ -87,6 +164,26 @@
             min-height: 70vh;
         }
 
+        /* ডাটাবেস স্ট্যাটাস */
+        .status-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .db-status {
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #10b981;
+            background: rgba(16, 185, 129, 0.08);
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(16, 185, 129, 0.15);
+        }
+
         /* সার্চ বার */
         .search-container {
             margin-bottom: 20px;
@@ -95,22 +192,24 @@
 
         .search-container input {
             width: 100%;
-            padding: 12px 45px 12px 15px;
+            padding: 14px 45px 14px 15px;
             background-color: #101924;
             border: 1px solid #141f2d;
-            border-radius: 8px;
+            border-radius: 10px;
             color: #fff;
             font-size: 15px;
             outline: none;
+            transition: border-color 0.2s;
         }
 
         .search-container input:focus {
             border-color: #ffcc00;
+            box-shadow: 0 0 10px rgba(255, 204, 0, 0.15);
         }
 
         .search-container i {
             position: absolute;
-            right: 15px;
+            right: 18px;
             top: 50%;
             transform: translateY(-50%);
             color: #8fa0b5;
@@ -119,16 +218,17 @@
         /* ওবিবি কার্ড ডিজাইন */
         .post-card {
             background-color: #101924;
-            border-radius: 6px;
+            border-radius: 8px;
             overflow: hidden;
             margin-bottom: 25px;
             border: 1px solid #141f2d;
             box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-            transition: transform 0.3s;
+            transition: transform 0.3s, box-shadow 0.3s;
         }
 
         .post-card:hover {
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.6);
         }
 
         .post-card img {
@@ -147,35 +247,44 @@
             color: #ffffff;
             line-height: 1.5;
             font-weight: 600;
-            margin-bottom: 15px;
+            margin-bottom: 18px;
         }
 
         .download-btn {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
             background: linear-gradient(135deg, #ffcc00, #ff9900);
             color: #000000;
             text-decoration: none;
-            padding: 12px 25px;
+            padding: 13px;
             font-weight: bold;
-            border-radius: 6px;
+            font-size: 15px;
+            border-radius: 8px;
             transition: transform 0.2s, box-shadow 0.2s;
             text-align: center;
         }
 
         .download-btn:hover {
-            transform: scale(1.03);
-            box-shadow: 0 4px 12px rgba(255, 204, 0, 0.3);
+            transform: scale(1.01);
+            box-shadow: 0 4px 15px rgba(255, 204, 0, 0.35);
         }
 
         /* ফুটার */
         footer {
             background-color: #060b10;
             text-align: center;
-            padding: 20px;
+            padding: 25px;
             border-top: 1px solid #141f2d;
             margin-top: 40px;
             font-size: 13px;
             color: #8fa0b5;
+        }
+
+        footer strong {
+            color: #ffcc00;
         }
 
         /* ফেস ভেরিফিকেশন এবং এডমিন গেটওয়ে স্টাইল */
@@ -211,6 +320,11 @@
             color: #8fa0b5;
             font-size: 20px;
             cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .close-modal:hover {
+            color: #ef4444;
         }
 
         /* ফেস স্ক্যানার UI */
@@ -223,13 +337,27 @@
             position: relative;
             overflow: hidden;
             background-color: #000;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
         }
 
         #webcam {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transform: scaleX(-1); /* মিরর ভিউ */
+            transform: scaleX(-1);
+        }
+
+        .face-target {
+            position: absolute;
+            border: 2px dashed #10b981;
+            border-radius: 15px;
+            width: 110px;
+            height: 110px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            box-shadow: 0 0 100px rgba(0,0,0,0.8) inset;
         }
 
         .laser-line {
@@ -252,7 +380,7 @@
         .scan-status {
             font-size: 14px;
             color: #10b981;
-            margin: 10px 0;
+            margin: 15px 0;
             font-weight: bold;
         }
 
@@ -262,11 +390,12 @@
             padding: 12px;
             background-color: #0b1118;
             border: 1px solid #141f2d;
-            border-radius: 6px;
+            border-radius: 8px;
             color: #fff;
             margin-bottom: 12px;
             outline: none;
             font-size: 14px;
+            transition: border-color 0.2s;
         }
 
         .admin-input:focus {
@@ -278,16 +407,21 @@
             color: #000;
             border: none;
             width: 100%;
-            padding: 12px;
+            padding: 13px;
             font-weight: bold;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 15px;
+            transition: background 0.2s;
+        }
+
+        .submit-btn:hover {
+            background-color: #e6b800;
         }
 
         .forget-pwd {
             display: inline-block;
-            margin-top: 10px;
+            margin-top: 12px;
             color: #8fa0b5;
             font-size: 13px;
             text-decoration: none;
@@ -300,8 +434,9 @@
             background-color: #101924;
             border: 1px solid #141f2d;
             padding: 20px;
-            border-radius: 8px;
+            border-radius: 10px;
             margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
 
         .dashboard-header {
@@ -318,42 +453,26 @@
             justify-content: space-between;
             align-items: center;
             background-color: #0b1118;
-            padding: 10px;
-            border-radius: 6px;
+            padding: 12px;
+            border-radius: 8px;
             margin-top: 10px;
             font-size: 13px;
+            border: 1px solid #141f2d;
         }
 
         .delete-post-btn {
             background-color: #ef4444;
             color: white;
             border: none;
-            padding: 5px 10px;
-            border-radius: 4px;
+            padding: 6px 12px;
+            border-radius: 6px;
             cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
         }
 
-        .db-status {
-            font-size: 12px;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            color: #10b981;
-            background: rgba(16, 185, 129, 0.1);
-            padding: 4px 8px;
-            border-radius: 12px;
-            margin-bottom: 10px;
-        }
-
-        @media (min-width: 600px) {
-            nav ul {
-                flex-direction: row;
-                justify-content: center;
-            }
-            nav ul li a {
-                border-bottom: none;
-                padding: 15px 22px;
-            }
+        .delete-post-btn:hover {
+            background-color: #dc2626;
         }
     </style>
 </head>
@@ -362,17 +481,30 @@
     <!-- হেডার -->
     <header>
         <h1 id="siteTitle">Trick And Solution Expert</h1>
-        <p>আমাদের ওয়েবসাইটে আপনাকে স্বাগত</p>
+        <div class="owner-badge">By SAFIN 🇧🇩</div>
+        <p>আমাদের অফিশিয়াল ডাউনলোড পোর্টালে আপনাকে স্বাগতম</p>
     </header>
 
-    <!-- নেভিগেশন মেনুবার -->
+    <!-- নেভিগেশন মেনুবার (টগল বাটন সমৃদ্ধ) -->
     <nav>
-        <ul>
-            <li><a onclick="showCategory('all')"><i class="fa fa-home"></i> Home</a></li>
-            <li><a onclick="showCategory('obb')">OBB</a></li>
-            <li><a onclick="showCategory('bus-mod')">Bus Mod</a></li>
-            <li><a onclick="showCategory('skin')">BD Bus Skin</a></li>
-            <li><a onclick="showCategory('map')">Map Mod</a></li>
+        <div class="nav-header-bar">
+            <!-- মেনু টগল বাটন -->
+            <button class="menu-toggle-btn" onclick="toggleMenu()">
+                <i class="fa fa-bars"></i> মেনু বাটন
+            </button>
+            <!-- আপনার নাম ও পতাকার ব্যাজ -->
+            <div class="nav-owner-badge">
+                <i class="fa fa-user"></i> SAFIN 🇧🇩
+            </div>
+        </div>
+        
+        <!-- ড্রপডাউন ক্যাটাগরি তালিকা (ক্লিক করলে নিচে নামবে) -->
+        <ul id="menuList" class="menu-list">
+            <li><a id="tab-all" onclick="showCategory('all')" class="active"><i class="fa fa-home"></i> Home</a></li>
+            <li><a id="tab-obb" onclick="showCategory('obb')"><i class="fa fa-file-archive"></i> OBB</a></li>
+            <li><a id="tab-bus-mod" onclick="showCategory('bus-mod')"><i class="fa fa-bus"></i> Bus Mod</a></li>
+            <li><a id="tab-skin" onclick="showCategory('skin')"><i class="fa fa-palette"></i> BD Bus Skin</a></li>
+            <li><a id="tab-map" onclick="showCategory('map')"><i class="fa fa-map"></i> Map Mod</a></li>
             <li><a onclick="openAdminGateway()"><i class="fa fa-user-shield"></i> Admin Panel</a></li>
         </ul>
     </nav>
@@ -380,23 +512,28 @@
     <div class="container">
         
         <!-- ডাটাবেস কানেকশন স্ট্যাটাস -->
-        <div style="text-align: right;">
-            <span class="db-status" id="dbStatus">
-                <i class="fa fa-circle" style="font-size: 8px;"></i> Firebase Connected
-            </span>
+        <div class="status-container">
+            <div style="font-size: 14px; color: #ffcc00; font-weight: bold;">
+                <i class="fa fa-folder-open"></i> Releases
+            </div>
+            <div>
+                <span class="db-status" id="dbStatus">
+                    <i class="fa fa-circle" style="font-size: 8px;"></i> Checking Database...
+                </span>
+            </div>
         </div>
 
         <!-- ১. এডমিন কন্ট্রোল ড্যাশবোর্ড (লগইন করার পর দেখাবে) -->
         <div id="adminDashboard">
             <div class="dashboard-header">
-                <h3><i class="fa fa-cog"></i> Admin Dashboard</h3>
-                <button onclick="logoutAdmin()" class="delete-post-btn" style="background-color: #718096;">Logout</button>
+                <h3><i class="fa fa-cog"></i> SAFIN's Dashboard</h3>
+                <button onclick="logoutAdmin()" class="delete-post-btn" style="background-color: #4b5563;">Logout</button>
             </div>
             
-            <h4 style="margin-bottom: 10px;">নতুন পোস্ট/ওবিবি ফাইল যোগ করুন:</h4>
+            <h4 style="margin-bottom: 12px; font-size: 14px; color: #ffcc00;"><i class="fa fa-plus-circle"></i> নতুন পোস্ট যোগ করুন:</h4>
             <input type="text" id="postTitle" class="admin-input" placeholder="পোস্টের নাম (যেমন: New BD Traffic OBB v4.2)">
             <input type="text" id="postImage" class="admin-input" placeholder="ইমেজ লিঙ্ক (ইউটিউব থাম্বনেইল বা ডিরেক্ট ছবি লিঙ্ক)">
-            <input type="text" id="postLink" class="admin-input" placeholder="গুগল ড্রাইভ বা ফাইল শেয়ার লিঙ্ক">
+            <input type="text" id="postLink" class="admin-input" placeholder="গুগল ড্রাইভ বা ওবিবি ডাউনলোড লিঙ্ক">
             
             <select id="postCategory" class="admin-input" style="background-color: #0b1118; color: #fff;">
                 <option value="obb">OBB</option>
@@ -405,9 +542,9 @@
                 <option value="map">Map Mod</option>
             </select>
             
-            <button onclick="addNewPost()" class="submit-btn" style="background-color: #10b981; color: white; margin-top: 5px;">পাবলিশ করুন</button>
+            <button onclick="addNewPost()" class="submit-btn" style="background-color: #10b981; color: white;">পাবলিশ করুন</button>
 
-            <h4 style="margin-top: 25px; margin-bottom: 10px;">পোস্ট ম্যানেজমেন্ট (মুছে ফেলার অপশন):</h4>
+            <h4 style="margin-top: 25px; margin-bottom: 10px; font-size: 14px; color: #ef4444;"><i class="fa fa-edit"></i> পোস্ট ম্যানেজমেন্ট:</h4>
             <div id="postsManagerList">
                 <!-- ম্যানেজ করার মতো পোস্টের তালিকা এখানে আসবে -->
             </div>
@@ -430,15 +567,16 @@
     <div id="adminGateway" class="admin-modal">
         <div class="modal-content">
             <span onclick="closeAdminGateway()" class="close-modal">&times;</span>
-            <h2 style="color: #ffcc00;"><i class="fa fa-eye"></i> Biometric Verify</h2>
-            <p style="font-size: 12px; color: #8fa0b5; margin-top: 5px;">নিরাপত্তার স্বার্থে এডমিন আইডি ফেস স্ক্যান করা বাধ্যতামূলক</p>
+            <h2 style="color: #ffcc00;"><i class="fa fa-shield-halved"></i> SAFIN Biometric</h2>
+            <p style="font-size: 12px; color: #8fa0b5; margin-top: 5px;">নিরাপত্তার স্বার্থে মালিকানা ভেরিফাই করা বাধ্যতামূলক</p>
 
             <!-- ফেস স্ক্যানার এরিয়া -->
             <div class="camera-container">
                 <video id="webcam" autoplay playsinline></video>
+                <div class="face-target"></div>
                 <div class="laser-line" id="laser"></div>
             </div>
-            <div class="scan-status" id="scanStatus">ক্যামেরার সামনে মুখ স্থির রাখুন...</div>
+            <div class="scan-status" id="scanStatus">ক্যামেরা প্রস্তুত করা হচ্ছে...</div>
 
             <!-- পাসওয়ার্ড ও অপশনস -->
             <div id="authForm" style="display: none;">
@@ -477,8 +615,9 @@
         </div>
     </div>
 
+    <!-- ফুটার -->
     <footer>
-        <p>&copy; 2026 Trick And Solution Expert. All Rights Reserved.</p>
+        <p>&copy; 2026 Trick And Solution Expert. Developed and Powered by <strong>SAFIN 🇧🇩</strong>.</p>
     </footer>
 
     <script>
@@ -499,10 +638,24 @@
         // ফায়ারবেস ইনিশিয়ালাইজেশন
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        console.log("Firebase Database Live Sync Active!");
+        console.log("Firebase Database Connection initialized!");
 
         // ==========================================
-        // ২. কাস্টম নোটিফিকেশন ফ্রেমওয়ার্ক (Replacing UI-breaking dialogs)
+        // ২. মেনু টগল এবং UI মেকানিজম (নতুন ড্রপডাউন সিস্টেম)
+        // ==========================================
+        function toggleMenu() {
+            const menuList = document.getElementById('menuList');
+            menuList.classList.toggle('active');
+        }
+
+        // কোনো ক্যাটাগরিতে ক্লিক করলে ড্রপডাউন মেনু অটোমেটিক বন্ধ হবে
+        function closeMenu() {
+            const menuList = document.getElementById('menuList');
+            menuList.classList.remove('active');
+        }
+
+        // ==========================================
+        // ৩. কাস্টম নোটিফিকেশন ফ্রেমওয়ার্ক (Replacing native popup behaviors)
         // ==========================================
         function showToast(message, type = 'success') {
             const toast = document.getElementById('customToast');
@@ -581,7 +734,7 @@
         }
 
         // ==========================================
-        // ৩. ডাটাবেস ও স্টোরেজ লজিক (CRUD)
+        // ৪. ডাটাবেস ও স্টোরেজ লজিক (CRUD)
         // ==========================================
         let posts = [];
         const defaultPassword = "Safin@098";
@@ -593,6 +746,21 @@
 
         // রিয়েল-টাইম ডাটাবেজ থেকে ডাটা লোড করা
         function fetchPosts() {
+            // লাইভ কানেকশন স্টেট চেক করার নিয়ম
+            const connectedRef = db.ref(".info/connected");
+            connectedRef.on("value", (snap) => {
+                const dbStatusEl = document.getElementById('dbStatus');
+                if (snap.val() === true) {
+                    dbStatusEl.style.color = '#10b981';
+                    dbStatusEl.style.background = 'rgba(16, 185, 129, 0.08)';
+                    dbStatusEl.innerHTML = `<i class="fa fa-circle" style="font-size: 8px;"></i> Firebase Connected`;
+                } else {
+                    dbStatusEl.style.color = '#f59e0b';
+                    dbStatusEl.style.background = 'rgba(245, 158, 11, 0.08)';
+                    dbStatusEl.innerHTML = `<i class="fa fa-circle-notch fa-spin" style="font-size: 8px;"></i> Offline / Connecting...`;
+                }
+            });
+
             db.ref('posts').on('value', (snapshot) => {
                 const data = snapshot.val();
                 posts = [];
@@ -605,9 +773,10 @@
                 renderPosts();
             }, (error) => {
                 console.error("Firebase read error: ", error);
-                document.getElementById('dbStatus').style.color = '#ef4444';
-                // স্ক্রিনে আসল ত্রুটি বার্তাটি দেখানোর জন্য আপডেট করা হলো
-                document.getElementById('dbStatus').innerHTML = `<i class='fa fa-exclamation-triangle'></i> Connection Failed: ${error.message}`;
+                const dbStatusEl = document.getElementById('dbStatus');
+                dbStatusEl.style.color = '#ef4444';
+                dbStatusEl.style.background = 'rgba(239, 68, 68, 0.08)';
+                dbStatusEl.innerHTML = `<i class='fa fa-exclamation-triangle'></i> Connection Failed: ${error.message}`;
             });
         }
 
@@ -619,13 +788,16 @@
             const category = document.getElementById('postCategory').value;
 
             if (!title || !link) {
-                showToast("দয়া করে পোস্টের নাম এবং ফাইলের লিঙ্ক দুটোই পূরণ করুন!", "error");
+                showToast("দয়া করে পোস্টের নাম এবং ফাইলের লিঙ্ক দুটোই পূরণ করুন!", "error");
                 return;
             }
 
-            // গুগল ড্রাইভ লিঙ্ক অটো-ডিরেক্ট ডাওনলোড লিঙ্ক কনভার্টার
+            // গুগল ড্রাইভ লিঙ্ক অটো-ডিরেক্ট ডাউনলোড লিঙ্ক কনভার্টার
             if (link.includes("drive.google.com")) {
                 let match = link.match(/\/d\/([a-zA-Z0-9-_]+)/);
+                if (!match) {
+                    match = link.match(/id=([a-zA-Z0-9-_]+)/);
+                }
                 if (match && match[1]) {
                     link = `https://docs.google.com/uc?export=download&id=${match[1]}`;
                 }
@@ -642,7 +814,7 @@
             db.ref('posts').push(newPost).then(() => {
                 clearInputs();
             }).catch(err => {
-                showToast("পোস্ট পাবলিশ করতে সমস্যা হয়েছে: " + err.message, "error");
+                showToast("পোস্ট পাবলিশ করতে সমস্যা হয়েছে: " + err.message, "error");
             });
         }
 
@@ -651,7 +823,7 @@
             showConfirm("নিশ্চিতকরণ", "আপনি কি নিশ্চিত যে এই রিলিজটি মুছে ফেলতে চান?", (confirmed) => {
                 if (confirmed) {
                     db.ref('posts/' + id).remove().then(() => {
-                        showToast("সাফল্যের সাথে রিলিজটি মুছে ফেলা হয়েছে!");
+                        showToast("সাফল্যের সাথে রিলিজটি মুছে ফেলা হয়েছে!");
                     });
                 }
             });
@@ -661,11 +833,11 @@
             document.getElementById('postTitle').value = '';
             document.getElementById('postImage').value = '';
             document.getElementById('postLink').value = '';
-            showToast("অভিনন্দন! আপনার ওবিবি পোস্টটি পাবলিশ হয়েছে।");
+            showToast("অভিনন্দন! আপনার ওবিবি পোস্টটি পাবলিশ হয়েছে।");
         }
 
         // ==========================================
-        // ৪. UI রেন্ডারিং ও সার্চ ফিল্টারিং
+        // ৫. UI রেন্ডারিং ও সার্চ ফিল্টারিং
         // ==========================================
         let currentFilter = 'all';
 
@@ -679,7 +851,7 @@
             const filteredPosts = currentFilter === 'all' ? posts : posts.filter(post => post.category === currentFilter);
 
             if (filteredPosts.length === 0) {
-                mainContainer.innerHTML = `<p style="text-align: center; color: #8fa0b5; padding: 40px 0;">কোনো ওবিবি বা ফাইল খুঁজে পাওয়া যায়নি!</p>`;
+                mainContainer.innerHTML = `<p style="text-align: center; color: #8fa0b5; padding: 40px 0;">কোনো ওবিবি বা ফাইল খুঁজে পাওয়া যায়নি!</p>`;
                 return;
             }
 
@@ -723,16 +895,29 @@
 
         function showCategory(category) {
             currentFilter = category;
+            
+            // সব মেনু আইটেম থেকে অ্যাক্টিভ ক্লাস রিমুভ করা
+            const tabs = document.querySelectorAll('#menuList li a');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // সিলেক্টেড মেনুতে অ্যাক্টিভ ক্লাস দেওয়া
+            const activeTab = document.getElementById(`tab-${category}`);
+            if (activeTab) {
+                activeTab.classList.add('active');
+            }
+            
+            closeMenu(); // ক্যাটাগরি নির্বাচনের পর মেনু লুকিয়ে যাবে
             renderPosts();
         }
 
         // ==========================================
-        // ৫. ফেস ভেরিফিকেশন এবং সিকিউরিটি গেটওয়ে
+        // ৬. ফেস ভেরিফিকেশন এবং সিকিউরিটি গেটওয়ে
         // ==========================================
         let streamRef = null;
         let isFaceVerified = false;
 
         function openAdminGateway() {
+            closeMenu(); // মেনু বন্ধ করা
             const modal = document.getElementById('adminGateway');
             modal.style.display = 'flex';
             isFaceVerified = false;
@@ -740,7 +925,7 @@
             document.getElementById('scanStatus').innerText = "ক্যামেরা প্রস্তুত করা হচ্ছে...";
             document.getElementById('laser').style.display = 'block';
 
-            // ১. ওয়েবক্যাম চালু করা (ফেস স্ক্যানারের জন্য নিরাপদ ব্রাউজার গার্ড সহ)
+            // ১. ওয়েবক্যাম চালু করা (ফেস স্ক্যানারের জন্য নিরাপদ ব্রাউজার গার্ড সহ)
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                 navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
                     .then(stream => {
@@ -750,14 +935,14 @@
                         
                         // ২. ফেস ডিটেকশন সিমুলেশন
                         setTimeout(() => {
-                            document.getElementById('scanStatus').innerHTML = "<i class='fa fa-check-circle' style='color:#10b981;'></i> ফেস আইডি মিলে গেছে! মালিকানা ভেরিফাইড।";
+                            document.getElementById('scanStatus').innerHTML = "<i class='fa fa-check-circle' style='color:#10b981;'></i> ফেস আইডি মিলে গেছে! SAFIN ভেরিফাইড।";
                             document.getElementById('laser').style.display = 'none';
                             isFaceVerified = true;
                             document.getElementById('authForm').style.display = 'block';
                         }, 3000);
                     })
                     .catch(err => {
-                        console.log("ক্যামেরা ব্যবহারের পারমিশন পাওয়া যায়নি বা ব্লক করা হয়েছে:", err);
+                        console.log("ক্যামেরা ব্যবহারের পারমিশন পাওয়া যায়নি বা ব্লক করা হয়েছে:", err);
                         showDemoFaceScanOption();
                     });
             } else {
@@ -765,7 +950,7 @@
             }
         }
 
-        // লোকাল বা আইফ্রেম এনভায়রনমেন্ট সিকিউরিটি গার্ড (ক্যামেরা না থাকলে বা ব্লকড হলে)
+        // লোকাল বা আইফ্রেম এনভায়রনমেন্ট সিকিউরিটি গার্ড (ক্যামেরা না থাকলে বা ব্লকড হলে)
         function showDemoFaceScanOption() {
             document.getElementById('laser').style.display = 'none';
             document.getElementById('scanStatus').innerHTML = `
@@ -778,7 +963,7 @@
             document.getElementById('scanStatus').innerText = "সিমুলেটেড ফেস স্ক্যান প্রসেসিং...";
             document.getElementById('laser').style.display = 'block';
             setTimeout(() => {
-                document.getElementById('scanStatus').innerHTML = "<i class='fa fa-check-circle' style='color:#10b981;'></i> সিমুলেটেড ফেস ভেরিফাইড (এডমিন অথোরাইজেশন সাকসেস!)";
+                document.getElementById('scanStatus').innerHTML = "<i class='fa fa-check-circle' style='color:#10b981;'></i> সিমুলেটেড ফেস ভেরিফাইড (SAFIN অথোরাইজেশন সাকসেস!)";
                 document.getElementById('laser').style.display = 'none';
                 isFaceVerified = true;
                 document.getElementById('authForm').style.display = 'block';
@@ -795,7 +980,7 @@
         // লগইন সাবমিট এবং ভেরিফিকেশন
         function verifyAndLogin() {
             if (!isFaceVerified) {
-                showToast("আপনার ফেস ভেরিফাই ছাড়া এডমিন প্যানেলে প্রবেশ সম্পূর্ণ নিষিদ্ধ!", "error");
+                showToast("আপনার ফেস ভেরিফাই ছাড়া এডমিন প্যানেলে প্রবেশ সম্পূর্ণ নিষিদ্ধ!", "error");
                 return;
             }
 
@@ -803,31 +988,31 @@
             const actualPwd = getAdminPassword();
 
             if (pwdInput === actualPwd) {
-                showToast("স্বাগতম সাফিন ভাই! আপনার এডমিন পোর্টাল সফলভাবে আনলক হয়েছে।");
+                showToast("স্বাগতম সাফিন ভাই! আপনার এডমিন পোর্টাল সফলভাবে আনলক হয়েছে।");
                 document.getElementById('adminDashboard').style.display = 'block';
                 closeAdminGateway();
                 document.getElementById('adminDashboard').scrollIntoView({ behavior: 'smooth' });
             } else {
-                showToast("ভুল পাসওয়ার্ড! আবার সঠিক পাসওয়ার্ড দিয়ে চেষ্টা করুন।", "error");
+                showToast("ভুল পাসওয়ার্ড! আবার সঠিক পাসওয়ার্ড দিয়ে চেষ্টা করুন।", "error");
             }
         }
 
-        // পাসওয়ার্ড রিসেট ফ্লো (কাস্টম মোডাল ব্যবহার করা হয়েছে)
+        // পাসওয়ার্ড রিসেট ফ্লো (কাস্টম মোডাল ব্যবহার করা হয়েছে)
         function forgetPasswordFlow() {
             showPrompt("রিসেট সিকিউরিটি", "রিসেট করতে আপনার সিক্রেট রিকভারি কি (Secret Key) দিন:", "Secret Recovery Key", false, (resetKey) => {
-                if (resetKey === null) return; // বাতিল করা হয়েছে
+                if (resetKey === null) return; // বাতিল করা হয়েছে
                 
                 if (resetKey === secretKey) {
-                    showPrompt("নতুন পাসওয়ার্ড", "আপনার নতুন পাসওয়ার্ড সেট করুন:", "নতুন পাসওয়ার্ড", true, (newPwd) => {
+                    showPrompt("নতুন পাসওয়ার্ড", "আপনার নতুন পাসওয়ার্ড সেট করুন:", "নতুন পাসওয়ার্ড", true, (newPwd) => {
                         if (newPwd && newPwd.trim().length > 4) {
                             localStorage.setItem('admin_pwd', newPwd);
-                            showToast("পাসওয়ার্ড পরিবর্তন সফল হয়েছে! নতুন পাসওয়ার্ড দিয়ে লগইন করুন।");
+                            showToast("পাসওয়ার্ড পরিবর্তন সফল হয়েছে! নতুন পাসওয়ার্ড দিয়ে লগইন করুন।");
                         } else if (newPwd !== null) {
-                            showToast("অবৈধ্য পাসওয়ার্ড!", "error");
+                            showToast("অবৈধ্য পাসওয়ার্ড!", "error");
                         }
                     });
                 } else {
-                    showToast("দুঃখিত, আপনার দেওয়া সিক্রেট কি মিলল না!", "error");
+                    showToast("দুঃখিত, আপনার দেওয়া সিক্রেট কি মিলল না!", "error");
                 }
             });
         }
